@@ -149,6 +149,55 @@ function extractHashtags(text) {
 }
 
 // ─────────────────────────────────────────────────────────────────
+// GRAPHIC FIELD EXTRACTION
+// Derive the card's structured fields from the post itself so the
+// graphic reflects the real content. Deterministic, no extra API call.
+// ─────────────────────────────────────────────────────────────────
+
+const BRAND_TEMPLATES = {
+  mylua: ['stat', 'quote', 'announce'],
+  henway: ['stat', 'quote', 'signal'],
+  blabbing: ['brief', 'proof'],
+  mike: ['insight'],
+};
+
+function deriveGraphic(copy, brand, postType) {
+  const lines = copy.split('\n').map(l => l.trim()).filter(l => l && !l.startsWith('#'));
+  const headline = lines[0] || '';
+  const statRe = /(\$\d[\d,]*(?:\.\d+)?\s?[KMB]?|\d{1,3}(?:\.\d+)?\s?%\+?|\b\d+x\b)/;
+
+  let stat = '', statLabel = '';
+  for (const line of lines) {
+    const m = line.match(statRe);
+    if (m) {
+      stat = m[1].replace(/\s+/g, '');
+      statLabel = line.replace(m[1], '').replace(/^[\s—\-–:]+|[\s—\-–:]+$/g, '').trim();
+      break;
+    }
+  }
+
+  // Quote = punchiest standalone line; attribution = an "— Name, Role" line if present.
+  const quote = lines.find(l => l.length > 30 && l.length < 160) || headline;
+  const attrLine = lines.find(l => /^[—\-–]\s?\S/.test(l));
+  const attribution = attrLine ? attrLine.replace(/^[—\-–]\s?/, '').trim() : '';
+  const body = lines.slice(1).join(' ').replace(statRe, '').slice(0, 240).trim();
+
+  // Suggested template based on content + brand.
+  const avail = BRAND_TEMPLATES[brand] || BRAND_TEMPLATES.mike;
+  let suggestedTemplate;
+  if (brand === 'blabbing') suggestedTemplate = 'brief';
+  else if (brand === 'mike') suggestedTemplate = 'insight';
+  else if (postType === 'quote' && avail.includes('quote')) suggestedTemplate = 'quote';
+  else if (stat && avail.includes('stat')) suggestedTemplate = 'stat';
+  else suggestedTemplate = avail[0];
+
+  return {
+    suggestedTemplate,
+    graphic: { headline, stat, statLabel, quote, attribution, body, source: '', flagged: '', outcome: '' },
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────
 // MAIN HANDLER
 // ─────────────────────────────────────────────────────────────────
 
@@ -213,11 +262,14 @@ ${formatRules}`;
         id: `draft-${Date.now()}-${i}`, copy, brand, postType,
         sentiment: postType === 'sentiment' ? sentiment : null,
         hashtags: extractHashtags(copy),
+        ...deriveGraphic(copy, brand, postType),
       }));
     } else {
-      drafts = [{ id: `draft-${Date.now()}-0`, copy: rawText.trim(), brand, postType,
+      const copy = rawText.trim();
+      drafts = [{ id: `draft-${Date.now()}-0`, copy, brand, postType,
         sentiment: postType === 'sentiment' ? sentiment : null,
         hashtags: extractHashtags(rawText),
+        ...deriveGraphic(copy, brand, postType),
       }];
     }
 

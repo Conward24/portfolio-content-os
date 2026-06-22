@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import Layout from '../components/Layout';
 import { BRANDS, SENTIMENT_TYPES, PLATFORM_SIZES } from '../lib/constants';
-import { getTemplatesForBrand } from '../lib/renderGraphic';
+import { getTemplatesForBrand } from '../lib/templates';
 
 const PLATFORMS = Object.keys(PLATFORM_SIZES);
 
@@ -98,7 +98,8 @@ export default function Staging() {
     setMeta(m);
     setCopy(d[0]?.copy || '');
     const templates = getTemplatesForBrand(m.brand || 'mylua');
-    setTemplate(templates[0]?.id || '');
+    const suggested = d[0]?.suggestedTemplate;
+    setTemplate(templates.some(t => t.id === suggested) ? suggested : (templates[0]?.id || ''));
     // Set smart channel default based on brand
     const defaultChannel = m.brand === 'blabbing' ? 'blabbing_company'
       : m.brand === 'henway' ? 'mike_personal'
@@ -111,9 +112,6 @@ export default function Staging() {
     setScheduleTime(ch.bestTimes[0]);
     loadWeekPosts();
   }, []);
-
-  const [graphicUrl, setGraphicUrl] = useState(null);
-  const [graphicLoading, setGraphicLoading] = useState(false);
 
   useEffect(() => {
     if (!drafts[idx]) return;
@@ -131,41 +129,45 @@ export default function Staging() {
     if (synced !== copy) setCopy(synced);
   }, [hashtags]);
 
-  // Render graphic via server-side API (real fonts, production quality)
+  // Render graphic via server-side @vercel/og engine (real fonts,
+  // deterministic, deploy-safe). Graphic fields come from the draft the
+  // generator produced — derived from the actual post, not placeholders.
   useEffect(() => {
     if (!meta.brand || !template) return;
     const timer = setTimeout(async () => {
       setGraphicLoading(true);
       try {
-        const lines = copy.split('\n').filter(Boolean);
-        const quote = lines.find(l => l.length > 30 && l.length < 150) || lines[0] || '';
+        const lines = copy.split('\n').map(l => l.trim()).filter(Boolean);
+        const longLine = lines.find(l => l.length > 30 && l.length < 160) || lines[0] || '';
+        const g = drafts[idx]?.graphic || {};
+        // Draft-supplied graphic fields win; fall back to parsing the copy.
+        const data = {
+          headline: g.headline || lines[0] || '',
+          body: g.body || lines.slice(1).join(' ').slice(0, 220) || '',
+          stat: g.stat || '',
+          statLabel: g.statLabel || '',
+          quote: (g.quote || longLine).replace(/^["“]|["”]$/g, ''),
+          attribution: g.attribution || '',
+          source: g.source || '',
+          flagged: g.flagged || '',
+          outcome: g.outcome || '',
+          eventLabel: g.eventLabel || '',
+          sentiment: drafts[idx]?.sentiment || g.sentiment || null,
+        };
         const res = await fetch('/api/render', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            brand: meta.brand,
-            template,
-            data: {
-              headline: lines[0] || 'MyLÚA Health',
-              subhead: lines[1] || '',
-              quote: quote.replace(/['"]/g, ''),
-              attribution: 'Mother, Pilot User',
-              stat: '90%+',
-              statLabel: 'first-trimester PPD risk accuracy',
-              eventLabel: 'Black Maternal Health Week 2026',
-              contextLabel: 'Black Maternal Health Week 2026',
-            }
-          }),
+          body: JSON.stringify({ brand: meta.brand, template, platform, data }),
         });
-        const data = await res.json();
-        if (data.image) setGraphicUrl(data.image);
+        const out = await res.json();
+        if (out.image) setGraphicUrl(out.image);
       } catch (e) {
         console.error('Render error:', e);
       }
       setGraphicLoading(false);
-    }, 800);
+    }, 700);
     return () => clearTimeout(timer);
-  }, [template, meta.brand]);
+  }, [template, meta.brand, platform, copy, idx]);
 
   async function loadWeekPosts() {
     try {
