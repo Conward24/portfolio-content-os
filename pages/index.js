@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Layout from '../components/Layout';
 import { BRANDS, POST_TYPES, SENTIMENT_TYPES, INTENSITY_LABELS } from '../lib/constants';
+import { explainSuggestion, describeMomentum } from '../lib/blabbing/describe';
 
 export default function Home() {
   const router = useRouter();
@@ -12,8 +13,25 @@ export default function Home() {
   const [sentiment, setSentiment] = useState(null);
   const [intensity, setIntensity] = useState(2);
   const [loading, setLoading] = useState(false);
+  const [incoming, setIncoming] = useState(null);   // a Blabbing signal handed in from /signals
+
+  // Pre-fill from an ingested signal: input + suggested archetype × intensity.
+  useEffect(() => {
+    const raw = sessionStorage.getItem('incomingSignal');
+    if (!raw) return;
+    sessionStorage.removeItem('incomingSignal');
+    try {
+      const sig = JSON.parse(raw);
+      setIncoming(sig);
+      setInput(sig.analysis || sig.summary || sig.topic || '');
+      setPostType('sentiment');
+      if (sig.derived?.type) setSentiment(sig.derived.type);
+      if (sig.derived?.intensity) setIntensity(sig.derived.intensity);
+    } catch { /* ignore malformed handoff */ }
+  }, []);
 
   const isSentiment = postType === 'sentiment';
+  const suggestion = incoming ? explainSuggestion(incoming) : null;
 
   async function generate() {
     if (!input.trim()) return;
@@ -138,23 +156,59 @@ export default function Home() {
           {isSentiment && (
             <div className="mb-16">
               <div className="section-label mb-8">Sentiment direction</div>
+
+              {/* Auto-suggestion from an ingested Blabbing signal */}
+              {suggestion && (
+                <div style={{
+                  marginBottom: 12, padding: '10px 14px', borderRadius: 10,
+                  background: 'var(--bg2)', border: '0.5px solid var(--border2)',
+                  fontSize: 12, color: 'var(--text2)', lineHeight: 1.6,
+                }}>
+                  <div style={{ marginBottom: 2 }}>
+                    <strong style={{ color: 'var(--text)' }}>Suggested: {suggestion.archetype} · {suggestion.intensityLabel}</strong>
+                    <span style={{
+                      marginLeft: 8, fontSize: 10, padding: '1px 6px', borderRadius: 6,
+                      background: 'var(--bg3)', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.04em',
+                    }}>{suggestion.confidence} confidence</span>
+                  </div>
+                  <div>{suggestion.reason}</div>
+                  {describeMomentum(incoming.momentum) && (
+                    <div style={{ marginTop: 2, color: 'var(--text3)' }}>Momentum: {describeMomentum(incoming.momentum)}</div>
+                  )}
+                  <div style={{ marginTop: 4, color: 'var(--text3)', fontStyle: 'italic' }}>
+                    Pre-selected below — change it if you disagree.
+                  </div>
+                </div>
+              )}
+
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 14 }}>
-                {Object.values(SENTIMENT_TYPES).map(s => (
+                {Object.values(SENTIMENT_TYPES).map(s => {
+                  const isSuggested = incoming?.derived?.type === s.id;
+                  return (
                   <button
                     key={s.id}
                     onClick={() => setSentiment(s.id)}
                     style={{
+                      position: 'relative',
                       padding: '10px 12px', borderRadius: 10, textAlign: 'left',
                       border: sentiment === s.id ? `1.5px solid ${s.selectedStyle.borderColor}` : '0.5px solid var(--border2)',
                       background: sentiment === s.id ? s.selectedStyle.background : 'var(--bg)',
                       cursor: 'pointer', fontFamily: 'inherit',
                     }}
                   >
+                    {isSuggested && (
+                      <span style={{
+                        position: 'absolute', top: 8, right: 8, fontSize: 9, fontWeight: 700,
+                        padding: '1px 6px', borderRadius: 6, background: s.selectedStyle.borderColor, color: '#fff',
+                        textTransform: 'uppercase', letterSpacing: '0.04em',
+                      }}>suggested</span>
+                    )}
                     <div style={{ fontSize: 15, marginBottom: 3 }}>{s.icon}</div>
                     <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 3 }}>{s.name}</div>
                     <div style={{ fontSize: 11, color: 'var(--text2)', lineHeight: 1.4 }}>{s.desc}</div>
                   </button>
-                ))}
+                  );
+                })}
               </div>
 
               {sentiment && (
