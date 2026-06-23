@@ -116,7 +116,7 @@ export default async function handler(req, res) {
   // Pass them through to the API as-is — the frontend builds the correct structure
   try {
     const response = await client.messages.create({
-      model: 'claude-sonnet-4-20250514', // Use Sonnet for vision capability
+      model: 'claude-sonnet-4-6', // Sonnet (vision-capable); claude-sonnet-4-20250514 retired 2026-06-15
       max_tokens: 1000,
       system: ADVISOR_SYSTEM,
       messages,

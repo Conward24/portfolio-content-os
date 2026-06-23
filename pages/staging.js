@@ -112,9 +112,6 @@ export default function Staging() {
     loadWeekPosts();
   }, []);
 
-  const [graphicUrl, setGraphicUrl] = useState(null);
-  const [graphicLoading, setGraphicLoading] = useState(false);
-
   useEffect(() => {
     if (!drafts[idx]) return;
     const draftCopy = drafts[idx].copy || '';
