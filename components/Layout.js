@@ -3,6 +3,7 @@ import Head from 'next/head';
 
 const NAV = [
   { href: '/', label: 'Generate', id: 'generate', icon: '✦' },
+  { href: '/signals', label: 'Signals', id: 'signals', icon: '◇' },
   { href: '/staging', label: 'Staging', id: 'staging', icon: '◎' },
   { href: '/calendar', label: 'Calendar', id: 'calendar', icon: '▦' },
   { href: '/library', label: 'Photo library', id: 'library', icon: '▤' },
