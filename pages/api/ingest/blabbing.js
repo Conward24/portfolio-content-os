@@ -66,8 +66,8 @@ export default async function handler(req, res) {
     return res.status(200).json(summary);
   } catch (e) {
     console.error('[ingest/blabbing] store failed', e);
-    const urlVars = ['KV_REST_API_URL', 'UPSTASH_REDIS_REST_URL', 'REDIS_URL', 'KV_URL'];
-    const activeUrl = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL || '';
+    const urlVars = ['NewRedis_KV_REST_API_URL', 'KV_REST_API_URL', 'UPSTASH_REDIS_REST_URL', 'REDIS_URL', 'KV_URL'];
+    const activeUrl = process.env.NewRedis_KV_REST_API_URL || process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL || '';
     let host = '';
     try { host = new URL(activeUrl).host; } catch { host = '(unparseable/empty)'; }
     return res.status(500).json({
