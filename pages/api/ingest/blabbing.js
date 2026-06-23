@@ -66,6 +66,11 @@ export default async function handler(req, res) {
     return res.status(200).json(summary);
   } catch (e) {
     console.error('[ingest/blabbing] store failed', e);
-    return res.status(500).json({ error: 'Failed to store signals' });
+    return res.status(500).json({
+      error: 'Failed to store signals',
+      detail: String(e?.message || e),
+      hasRedisUrl: !!process.env.KV_REST_API_URL,
+      hasRedisToken: !!process.env.KV_REST_API_TOKEN,
+    });
   }
 }

@@ -59,10 +59,14 @@ const signals = [
   },
 ];
 
+// If the deployment is behind Vercel Deployment Protection, pass the
+// "Protection Bypass for Automation" secret so this script can reach it.
+const headers = { 'Content-Type': 'application/json', 'X-B4B-Secret': SECRET };
+const bypass = process.env.VERCEL_AUTOMATION_BYPASS_SECRET || process.env.VERCEL_BYPASS;
+if (bypass) headers['x-vercel-protection-bypass'] = bypass;
+
 const res = await fetch(`${BASE}/api/ingest/blabbing`, {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json', 'X-B4B-Secret': SECRET },
-  body: JSON.stringify({ signals }),
+  method: 'POST', headers, redirect: 'manual', body: JSON.stringify({ signals }),
 });
 const out = await res.json();
 console.log(res.status, JSON.stringify(out, null, 2));
