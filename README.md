@@ -2,6 +2,8 @@
 
 Unified content operating system for Dr. Michael Conward's three-brand portfolio: MyLÚA Health, Henway, and Blabbing.
 
+> 📘 **New here? Read [`docs/OPERATING-GUIDE.md`](docs/OPERATING-GUIDE.md)** — the full operating manual / SOP: what every screen does (with UI screenshots), how a post travels from signal to scheduled card, how the AI is prompted (the "content brain"), what the Content Advisor knows, and **which file to open to change anything.** The notes below are a quick developer reference.
+
 ## What this is
 
 - **Generate** — Input screen: pick brand, post type (including Sentiment post), paste Blabbing signal, get 1-3 AI-drafted posts
