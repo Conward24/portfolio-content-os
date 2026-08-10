@@ -12,7 +12,7 @@
 // ─────────────────────────────────────────────────────────────────
 
 import { parseBlabbingEmail, normalizeContractPayload } from '../../../lib/blabbing/parseSignal';
-import { saveSignals, getRecentSignals, getSignalsByDate } from '../../../lib/blabbing/signalStore';
+import { saveSignals, getRecentSignals, getSignalsByDate, resetSignals } from '../../../lib/blabbing/signalStore';
 
 export default async function handler(req, res) {
   // ── read path ──
@@ -41,6 +41,25 @@ export default async function handler(req, res) {
 
   // ── normalize whatever shape arrived into an array of signals ──
   const body = req.body || {};
+
+  // ── destructive reset: POST { reset: "yes-wipe-blabbing" } ──
+  // For re-ingesting after a parser fix. Signals are stored parsed, so a bad
+  // parse cannot be repaired in place; the emails have to come through again.
+  // Spelled-out token so a stray `{reset:true}` can't wipe the baseline.
+  if (body.reset) {
+    if (body.reset !== 'yes-wipe-blabbing') {
+      return res.status(400).json({ error: 'reset must be the literal string "yes-wipe-blabbing"' });
+    }
+    try {
+      const out = await resetSignals();
+      console.warn('[ingest/blabbing] RESET', out.cleared.length, 'keys');
+      return res.status(200).json({ ok: true, ...out });
+    } catch (e) {
+      console.error('[ingest/blabbing] reset failed', e);
+      return res.status(500).json({ error: 'Reset failed' });
+    }
+  }
+
   let signals = [];
   try {
     if (typeof body.raw === 'string') {
