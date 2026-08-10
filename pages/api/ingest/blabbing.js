@@ -12,7 +12,10 @@
 // ─────────────────────────────────────────────────────────────────
 
 import { parseBlabbingEmail, normalizeContractPayload } from '../../../lib/blabbing/parseSignal';
-import { saveSignals, getRecentSignals, getSignalsByDate, resetSignals } from '../../../lib/blabbing/signalStore';
+import {
+  saveSignals, getRecentSignals, getSignalsByDate,
+  resetSignals, archiveRaw, reparseAll,
+} from '../../../lib/blabbing/signalStore';
 
 export default async function handler(req, res) {
   // ── read path ──
@@ -60,9 +63,26 @@ export default async function handler(req, res) {
     }
   }
 
+  // ── repair: POST { reparse: true } ──
+  // Re-derives every signal from the archived .eml files using the current parser.
+  // This is the no-mailbox-needed path after a parser fix.
+  if (body.reparse) {
+    try {
+      const out = await reparseAll(parseBlabbingEmail);
+      console.warn('[ingest/blabbing] REPARSE', JSON.stringify(out));
+      return res.status(200).json({ ok: true, ...out });
+    } catch (e) {
+      console.error('[ingest/blabbing] reparse failed', e);
+      return res.status(500).json({ error: 'Reparse failed' });
+    }
+  }
+
   let signals = [];
   try {
     if (typeof body.raw === 'string') {
+      // Archive before parsing: if the parser is wrong we still keep the input,
+      // which is exactly the case this is insurance against.
+      await archiveRaw(body.raw);
       const s = parseBlabbingEmail(body.raw);
       if (s) signals = [s];
     } else if (Array.isArray(body.signals)) {
