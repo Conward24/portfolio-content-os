@@ -28,6 +28,7 @@
 
 var LABEL = 'ContentOS/Ingested';
 var SEARCH = 'from:notifications@appuser.io subject:"Daily Pulse" newer_than:2d';
+var THREAD_LIMIT = 50;   // plenty for a daily run (10 pulses/day); backfill raises it
 
 function prop_(key) {
   var v = PropertiesService.getScriptProperties().getProperty(key);
@@ -48,7 +49,7 @@ function forwardDailyPulses() {
   var secret = prop_('INGEST_SECRET');
   var label = getOrCreateLabel_();
 
-  var threads = GmailApp.search(SEARCH + ' -label:"' + LABEL + '"', 0, 50);
+  var threads = GmailApp.search(SEARCH + ' -label:"' + LABEL + '"', 0, THREAD_LIMIT);
   Logger.log('Found %s unprocessed thread(s)', threads.length);
   if (!threads.length) return;
 
@@ -120,14 +121,20 @@ function testOnce() {
 }
 
 /**
- * ONE-OFF REPAIR: wipe the store and re-send every pulse email through a fixed parser.
+ * ONE-OFF BACKFILL + REPAIR. Does two jobs at once:
  *
- * Needed because signals are stored parsed, not raw. When a parser bug is fixed there is
- * nothing to re-derive from — the emails have to come through again. This also strips the
- * ContentOS/Ingested label so the normal search picks them back up.
+ *  1. REPAIR — signals were stored parsed, not raw, so a parser fix has nothing to
+ *     re-derive from. Re-sending the emails is the only way to correct days already
+ *     ingested by a broken parser.
+ *  2. BACKFILL — and this is the bigger one. The daily search window is `newer_than:2d`,
+ *     so the very first run only ever captured the last two days. Every Daily Pulse older
+ *     than that is still sitting in Gmail, never ingested. The tier engine needs 14 days
+ *     of history before it scores anything, and that history is worth far more than the
+ *     repair: it is the difference between a baseline starting today and one that starts
+ *     however far back the pulses go.
  *
- * Widens the window to 7 days (the daily run uses 2) so pulses from earlier in the week are
- * still reachable. Run this manually; do not put it on a trigger.
+ * So this widens the window to 90 days and raises the thread cap to match. Run manually.
+ * Do not put it on a trigger.
  */
 function reingestAll() {
   var url = prop_('INGEST_URL');
@@ -147,16 +154,29 @@ function reingestAll() {
     return;
   }
 
-  // 2. Un-label so forwardDailyPulses sees them as unprocessed again.
+  // 2. Un-label so forwardDailyPulses sees them as unprocessed again. Loops because
+  //    GmailApp.search is capped per call and a long backfill exceeds one page.
   var label = getOrCreateLabel_();
-  var labelled = GmailApp.search('label:"' + LABEL + '"', 0, 100);
-  labelled.forEach(function (t) { t.removeLabel(label); });
-  Logger.log('Un-labelled %s thread(s)', labelled.length);
+  var removed = 0;
+  while (true) {
+    var batch = GmailApp.search('label:"' + LABEL + '"', 0, 200);
+    if (!batch.length) break;
+    batch.forEach(function (t) { t.removeLabel(label); });
+    removed += batch.length;
+    if (batch.length < 200) break;
+  }
+  Logger.log('Un-labelled %s thread(s)', removed);
 
-  // 3. Re-send with a wider window than the daily run.
-  var saved = SEARCH;
-  SEARCH = 'from:notifications@appuser.io subject:"Daily Pulse" newer_than:7d';
-  try { forwardDailyPulses(); } finally { SEARCH = saved; }
+  // 3. Re-send over the full history, not just the daily window.
+  var savedSearch = SEARCH, savedLimit = THREAD_LIMIT;
+  SEARCH = 'from:notifications@appuser.io subject:"Daily Pulse" newer_than:90d';
+  THREAD_LIMIT = 400;
+  try {
+    forwardDailyPulses();
+  } finally {
+    SEARCH = savedSearch;
+    THREAD_LIMIT = savedLimit;
+  }
 }
 
 /** Read back what the store actually holds — confirms the round trip end to end. */
