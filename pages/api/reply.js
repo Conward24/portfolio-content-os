@@ -15,6 +15,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { redis } from '../../lib/redis';
 import { BRANDS } from '../../lib/constants';
+import { MICHAEL_VOICE } from '../../lib/voice';
 
 const client = new Anthropic();
 
@@ -85,10 +86,14 @@ function extractJson(text) {
 
 function systemPrompt(brand, platform, post) {
   const b = BRANDS[brand];
+  // A reply on his own profile has to sound like him, not like the company
+  // page. Those are different voices and they disagree on em dashes.
+  const personal = post && (post.channelLabel === 'PERSONAL' || post.channelLabel === 'CROSSOVER');
   return `You draft replies to comments on ${b?.name || brand}'s social posts, for Dr. Michael Conward.
 
-## The brand's voice
-${b?.systemPrompt || 'Write plainly and specifically. No hype.'}
+## Voice
+${personal ? MICHAEL_VOICE : (b?.systemPrompt || 'Write plainly and specifically. No hype.')}
+${personal ? '\nThis comment is on his PERSONAL profile, so it is his voice, not the company\'s.' : ''}
 
 ## The platform: ${PLATFORMS[platform].name}
 ${PLATFORMS[platform].brief}
