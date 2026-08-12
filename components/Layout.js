@@ -2,14 +2,25 @@ import Link from 'next/link';
 import Head from 'next/head';
 
 const NAV = [
+  { href: '/today', label: 'Today', id: 'today', icon: '◆' },
   { href: '/', label: 'Generate', id: 'generate', icon: '✦' },
   { href: '/signals', label: 'Signals', id: 'signals', icon: '◇' },
   { href: '/staging', label: 'Staging', id: 'staging', icon: '◎' },
   { href: '/calendar', label: 'Calendar', id: 'calendar', icon: '▦' },
+  { href: '/replies', label: 'Replies', id: 'replies', icon: '↩' },
   { href: '/library', label: 'Photo library', id: 'library', icon: '▤' },
   { href: '/topics', label: 'Topic feeds', id: 'topics', icon: '◈' },
   { href: '/strategy', label: 'Strategy guide', id: 'strategy', icon: '◐' },
   { href: '/advisor', label: 'Content Advisor', id: 'advisor', icon: '◉' },
+];
+
+// Phone-only bottom bar. Deliberately four items — what he needs standing
+// in a queue with one hand, not the whole workspace.
+const MOBILE_NAV = [
+  { href: '/today', label: 'Today', id: 'today', icon: '◆' },
+  { href: '/replies', label: 'Replies', id: 'replies', icon: '↩' },
+  { href: '/library', label: 'Assets', id: 'library', icon: '▤' },
+  { href: '/calendar', label: 'Calendar', id: 'calendar', icon: '▦' },
 ];
 
 const BRAND_LINKS = [
@@ -69,6 +80,18 @@ export default function Layout({ children, title, active }) {
             </div>
           </div>
         </aside>
+
+        {/* Bottom tab bar — phones only (see globals.css @media 768px).
+            Four destinations he actually needs on the go; the rest stay
+            on desktop where there is room for them. */}
+        <nav className="mobile-nav">
+          {MOBILE_NAV.map(item => (
+            <Link key={item.id} href={item.href} className={active === item.id ? 'active' : ''}>
+              <span className="mn-icon">{item.icon}</span>
+              {item.label}
+            </Link>
+          ))}
+        </nav>
 
         {/* Main */}
         <main className="main-content">

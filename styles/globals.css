@@ -327,3 +327,63 @@ textarea { resize: none; }
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+
+/* ── Mobile (added 2026-08-12) ──────────────────────────────────────
+   The app was desktop-only: a fixed 220px sidebar plus a matching
+   margin-left, with no media queries, so on a phone the nav ate most
+   of the viewport. Below 768px the sidebar is replaced by a bottom
+   tab bar — thumb-reachable, and it keeps the content full width. */
+
+.mobile-nav { display: none; }
+
+@media (max-width: 768px) {
+  .sidebar { display: none; }
+
+  .main-content {
+    margin-left: 0;
+    /* Clear the bottom bar plus the iOS home indicator */
+    padding-bottom: calc(64px + env(safe-area-inset-bottom));
+  }
+
+  .mobile-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 200;
+    background: var(--bg);
+    border-top: 0.5px solid var(--border2);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .mobile-nav a {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 9px 2px 7px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    color: var(--text3);
+    text-decoration: none;
+    /* Comfortable tap target on a phone */
+    min-height: 52px;
+  }
+
+  .mobile-nav a.active { color: var(--text); }
+  .mobile-nav .mn-icon { font-size: 16px; line-height: 1; }
+
+  /* Content breathes at phone width */
+  .main-content > div { padding-left: 12px; padding-right: 12px; }
+  .card { padding: 14px; border-radius: 10px; }
+
+  /* 16px minimum stops iOS Safari zooming the page on focus */
+  input, textarea, select { font-size: 16px !important; }
+
+  /* Tables and wide blocks scroll themselves rather than the page */
+  table { display: block; overflow-x: auto; }
+}

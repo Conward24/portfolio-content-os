@@ -9,8 +9,11 @@ export default async function handler(req, res) {
 
       if (!index.length) return res.status(200).json({ photos: [] });
 
-      // Fetch each photo individually — no size limit issues
-      const photoPromises = index.slice(0, 50).map(id =>
+      // Each photo is its own key, so the old 1MB-array limit no longer applies
+      // and the hard slice(0, 50) that guarded it became the real ceiling —
+      // it silently hid every asset past the 50 most recent. Bounded, not fixed.
+      const limit = Math.min(parseInt(req.query.limit, 10) || 500, 1000);
+      const photoPromises = index.slice(0, limit).map(id =>
         redis.get(`portfolio:photo:${id}`).then(data => {
           if (!data) return null;
           try {
