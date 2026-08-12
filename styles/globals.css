@@ -387,3 +387,10 @@ textarea { resize: none; }
   /* Tables and wide blocks scroll themselves rather than the page */
   table { display: block; overflow-x: auto; }
 }
+
+@media (max-width: 768px) {
+  /* The calendar is a 6-column week grid — let it scroll itself rather than
+     squeezing five days into 390px. /today is the phone view; this stays
+     usable for a quick look. */
+  .cal-grid { overflow-x: auto; }
+}

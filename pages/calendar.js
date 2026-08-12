@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
-import { BRANDS, SENTIMENT_TYPES, WEEK_SEED_POSTS } from '../lib/constants';
+import { BRANDS, SENTIMENT_TYPES } from '../lib/constants';
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
 
@@ -73,8 +73,11 @@ export default function Calendar() {
   const weekLabel = `Week of ${formatWeekLabel(weekStart)}`;
 
   // Merge seed posts + saved posts
-  const seedForWeek = WEEK_SEED_POSTS.filter(p => p.weekOffset === weekOffset);
-  const allPosts = [...seedForWeek, ...savedPosts];
+  // WEEK_SEED_POSTS were hardcoded demo rows (BMHW, IBM CAB) merged into every
+  // week by offset. They inflated the brand counts and put dead placeholders in
+  // the grid alongside real scheduled posts. The calendar now shows only what is
+  // actually scheduled.
+  const allPosts = savedPosts;
   const filtered = filter === 'all' ? allPosts : allPosts.filter(p => p.brand === filter);
 
   function getPostsForDay(day) {
