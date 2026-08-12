@@ -15,7 +15,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { redis } from '../../lib/redis';
 import { BRANDS } from '../../lib/constants';
-import { MICHAEL_VOICE } from '../../lib/voice';
+import { MICHAEL_VOICE, MICHAEL_REPLIES } from '../../lib/voice';
 
 const client = new Anthropic();
 
@@ -26,11 +26,12 @@ const CALENDAR_KEY = 'portfolio:calendar:posts';
 const PLATFORMS = {
   linkedin: {
     name: 'LinkedIn',
-    brief: `Peer-to-peer, professional but not corporate. 1-3 short paragraphs is the ceiling; most
-good replies are 2-4 sentences. You may disagree, add a distinct point, or ask a real question —
-LinkedIn rewards replies that extend the conversation rather than close it. Use the commenter's
-first name once. No emoji unless the comment used them first. Never restate the post.
-The reply thread is public and is read by people who did not comment, so write for the lurker too.`,
+    brief: `Peer-to-peer, professional but not corporate. Two to four sentences. Open with the
+commenter's FULL name as an @-mention and carry straight on in the same line.
+Never a bare thank-you: every reply adds a specific compliment, a fresh image, or a line that
+moves their idea one step further. Agreement with nothing added is the failure mode.
+No emoji unless the comment used them first. Never restate the post. The thread is public and
+read by people who did not comment, so write for the lurker too.`,
   },
   tiktok: {
     name: 'TikTok',
@@ -93,7 +94,7 @@ function systemPrompt(brand, platform, post) {
 
 ## Voice
 ${personal ? MICHAEL_VOICE : (b?.systemPrompt || 'Write plainly and specifically. No hype.')}
-${personal ? '\nThis comment is on his PERSONAL profile, so it is his voice, not the company\'s.' : ''}
+${personal ? `\nThis comment is on his PERSONAL profile, so it is his voice, not the company's.\n\n${MICHAEL_REPLIES}` : ''}
 
 ## The platform: ${PLATFORMS[platform].name}
 ${PLATFORMS[platform].brief}
