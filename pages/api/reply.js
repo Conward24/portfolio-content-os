@@ -19,6 +19,10 @@ import { MICHAEL_VOICE, MICHAEL_REPLIES } from '../../lib/voice';
 
 const client = new Anthropic();
 
+// Next's default body limit is 1mb, which a phone screenshot clears instantly.
+// The client downscales before sending, so this is only a safety net.
+export const config = { api: { bodyParser: { sizeLimit: '8mb' } } };
+
 const CALENDAR_KEY = 'portfolio:calendar:posts';
 
 // Register per platform. These are craft differences, not tone preferences —

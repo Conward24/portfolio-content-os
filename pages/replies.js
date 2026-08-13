@@ -44,12 +44,37 @@ export default function Replies() {
       .catch(() => {});
   }, []);
 
-  /** Phones have no paste-image gesture, so a file input is the only way in. */
+  /**
+   * Phones have no paste-image gesture, so a file input is the only way in.
+   *
+   * Downscaled before it leaves the device. A raw iPhone screenshot is 2-4MB and
+   * base64 adds a third on top, which blew straight past the request body limit
+   * and surfaced as a bare "Request failed". 1600px is plenty for reading a
+   * comment thread, and re-encoding as JPEG also converts HEIC, which the API
+   * does not accept at all.
+   */
   function readImage(file) {
     if (!file || !file.type.startsWith('image/')) return;
-    const reader = new FileReader();
-    reader.onload = () => setImage(reader.result);
-    reader.readAsDataURL(file);
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      const MAX = 1600;
+      const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      setImage(canvas.toDataURL('image/jpeg', 0.85));
+      URL.revokeObjectURL(url);
+    };
+    img.onerror = () => {
+      // Could not decode it here; send the original and let the server judge.
+      URL.revokeObjectURL(url);
+      const reader = new FileReader();
+      reader.onload = () => setImage(reader.result);
+      reader.readAsDataURL(file);
+    };
+    img.src = url;
   }
 
   // Paste is the desktop workflow; on mobile the button below does the same job.
@@ -77,11 +102,19 @@ export default function Replies() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ comment, image, platform, brand, postId: postId || null }),
       });
+      if (!res.ok) {
+        const detail = await res.text();
+        setErr(res.status === 413
+          ? 'That screenshot was too large to send. Try cropping it.'
+          : `Server said ${res.status}. ${detail.slice(0, 120)}`);
+        setLoading(false);
+        return;
+      }
       const data = await res.json();
       if (data.error) setErr(data.error);
       else setResult(data);
     } catch (e) {
-      setErr('Request failed. Try again.');
+      setErr(`Request failed: ${e.message}`);
     }
     setLoading(false);
   }
