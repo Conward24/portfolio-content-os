@@ -33,8 +33,20 @@ function niceTime(t) {
   return `${h % 12 || 12}:${String(m).padStart(2, '0')}${ampm}`;
 }
 
-/** Match a post to library assets by the naming convention the library was seeded with. */
+/**
+ * Resolve a post's assets.
+ *
+ * An explicit `assets: ["filename.png"]` on the post wins. Everything else falls
+ * back to the naming conventions the library was seeded with, which only work
+ * for the bulk Henway sets — a one-off asset like a conference tile matches
+ * nothing, and the alternative (bending the filename to fit a convention) makes
+ * the filename carry meaning it should not have to.
+ */
 function matchAssets(post, photos) {
+  if (Array.isArray(post.assets) && post.assets.length) {
+    const named = post.assets.map(n => photos.find(p => p.name === n)).filter(Boolean);
+    if (named.length) return named;
+  }
   const t = (post.title || '').toLowerCase();
   const pick = pre => photos.filter(p => p.name.toLowerCase().startsWith(pre));
   const card = /card (\d+)/.exec(t);
