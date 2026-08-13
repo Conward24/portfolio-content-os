@@ -146,8 +146,15 @@ export default function Today() {
   const t = todayStr();
   // Nothing before the schedule starts, and missed items only from the last 3 days —
   // a week of guilt on the top of the screen is not useful in a queue.
-  const from = new Date(Date.now() - 3 * 86400000).toISOString().slice(0, 10);
-  const to = new Date(Date.now() + 3 * 86400000).toISOString().slice(0, 10);
+  // Local, not toISOString(). Grouping used local dates while the window used UTC
+  // ones, so every evening past ~8pm Eastern the two disagreed by a day.
+  const shift = n => {
+    const d = new Date();
+    d.setDate(d.getDate() + n);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
+  const from = shift(-3);
+  const to = shift(3);
   const due = posts
     .filter(p => p.date >= from && p.date <= to)
     .filter(p => !(p.date < t && posted[p.id]))     // hide finished past work

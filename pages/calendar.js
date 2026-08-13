@@ -2,13 +2,15 @@ import { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import { BRANDS, SENTIMENT_TYPES } from '../lib/constants';
 
-const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+// Sat and Sun were missing entirely, so every weekend post was invisible.
+const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 function getWeekStart(offset = 0) {
   const now = new Date();
   const day = now.getDay();
   const diff = now.getDate() - day + (day === 0 ? -6 : 1);
   const mon = new Date(now.setDate(diff + offset * 7));
+  mon.setHours(0, 0, 0, 0);   // strip the time so it cannot cross a date boundary
   return mon;
 }
 
@@ -16,10 +18,15 @@ function formatWeekLabel(date) {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
+/** Local YYYY-MM-DD. toISOString() is UTC and silently shifts the date each evening. */
+function localISO(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 function getDateForDay(weekStart, dayIdx) {
   const d = new Date(weekStart);
   d.setDate(d.getDate() + dayIdx);
-  return d.toISOString().split('T')[0];
+  return localISO(d);
 }
 
 export default function Calendar() {
@@ -207,7 +214,7 @@ export default function Calendar() {
         ) : (
           <div style={{
             display: 'grid',
-            gridTemplateColumns: '60px repeat(5, 1fr)',
+            gridTemplateColumns: '60px repeat(7, 1fr)',
             gap: 10,
           }}>
             {/* Headers */}
