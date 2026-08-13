@@ -62,6 +62,86 @@ function MessageBubble({ msg }) {
   );
 }
 
+/**
+ * A proposed calendar change, with an Apply button.
+ *
+ * The advisor decides what should happen; Michael decides whether it does.
+ * Nothing here touches the calendar until the button is pressed.
+ */
+function ProposedChanges({ actions }) {
+  const [state, setState] = useState({});
+
+  const LABEL = {
+    schedule_post: 'Add to calendar',
+    move_post: 'Move',
+    remove_post: 'Remove',
+  };
+
+  async function apply(a, i) {
+    setState(s => ({ ...s, [i]: 'working' }));
+    try {
+      if (a.name === 'schedule_post') {
+        const { title, brand, channelLabel, date, time, copy } = a.input;
+        await fetch('/api/calendar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: `post-advisor-${Date.now()}`,
+            title, brand, channelLabel, date, copy,
+            time: time || (channelLabel === 'PERSONAL' ? '10:00' : '11:30'),
+            channel: channelLabel === 'PERSONAL' ? 'LinkedIn personal'
+              : channelLabel === 'COMPANY' ? 'LinkedIn company' : channelLabel,
+            type: 'Text post',
+          }),
+        });
+      } else if (a.name === 'move_post') {
+        await fetch('/api/calendar', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: a.input.id, date: a.input.date }),
+        });
+      } else if (a.name === 'remove_post') {
+        await fetch('/api/calendar', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: a.input.id }),
+        });
+      }
+      setState(s => ({ ...s, [i]: 'done' }));
+    } catch (e) {
+      setState(s => ({ ...s, [i]: 'failed' }));
+    }
+  }
+
+  return (
+    <div style={{ margin: '2px 0 16px 36px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {actions.map((a, i) => (
+        <div key={a.id || i} className="card" style={{ padding: 12, borderLeft: '3px solid #c9a000' }}>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.07em', textTransform: 'uppercase', color: 'var(--text3)', marginBottom: 5 }}>
+            Proposed change
+          </div>
+          <div style={{ fontSize: 13.5, fontWeight: 600, marginBottom: 3 }}>
+            {LABEL[a.name] || a.name}
+            {a.input.title ? `: ${a.input.title}` : a.input.id ? `: ${a.input.id}` : ''}
+            {a.input.date ? ` → ${a.input.date}` : ''}
+          </div>
+          {a.input.reason && (
+            <div style={{ fontSize: 12.5, color: 'var(--text2)', lineHeight: 1.6, marginBottom: 9 }}>{a.input.reason}</div>
+          )}
+          <button
+            className="btn"
+            onClick={() => apply(a, i)}
+            disabled={state[i] === 'working' || state[i] === 'done'}
+            style={{ fontSize: 12.5, padding: '7px 14px', fontWeight: 600 }}
+          >
+            {state[i] === 'done' ? 'Applied ✓' : state[i] === 'working' ? 'Applying…' : state[i] === 'failed' ? 'Failed, retry' : 'Apply'}
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function Advisor() {
   const [messages, setMessages] = useState([]);
   const [apiMessages, setApiMessages] = useState([]); // parallel array for API calls
@@ -144,7 +224,9 @@ export default function Advisor() {
       const data = await res.json();
       const replyText = data.reply || 'Something went wrong.';
       const replyMsg = { role: 'assistant', content: replyText };
-      setMessages(prev => [...prev, { role: 'assistant', content: replyText }]);
+      // Proposed calendar changes ride alongside the text. They are not applied
+      // until he taps Apply — see CALENDAR_TOOLS in the API route.
+      setMessages(prev => [...prev, { role: 'assistant', content: replyText, actions: data.actions || [] }]);
       setApiMessages(prev => [...prev, replyMsg]);
     } catch (e) {
       setMessages(prev => [...prev, { role: 'assistant', content: 'Connection error. Check your API key.' }]);
@@ -281,7 +363,12 @@ export default function Advisor() {
           )}
 
           <div style={{ maxWidth: 680, margin: '0 auto' }}>
-            {messages.map((msg, i) => <MessageBubble key={i} msg={msg} />)}
+            {messages.map((msg, i) => (
+              <div key={i}>
+                <MessageBubble msg={msg} />
+                {msg.actions?.length > 0 && <ProposedChanges actions={msg.actions} />}
+              </div>
+            ))}
             {loading && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
                 <div style={{

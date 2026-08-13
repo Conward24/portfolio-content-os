@@ -223,7 +223,81 @@ Weeks 1 and 2 are deliberately unsellable. They buy the right to be heard in Wee
 2. Which channel does it belong on, and is that channel at its cap that week?
 3. What does it displace, and where does the displaced post go?
 4. Does it fit the week's job in the arc, or does it undercut it?
-5. Say the cost out loud. Every insertion moves something.`;
+5. Say the cost out loud. Every insertion moves something.
+
+## Proposing changes
+You have schedule_post, move_post and remove_post. Use them whenever a concrete change to the
+calendar is the right answer, and use the exact post ids from the live calendar below.
+
+These are PROPOSALS. Nothing is written until Michael taps Apply, so a tool call is you saying
+"here is exactly what I would do", not you doing it. Still explain the reasoning in your reply;
+the buttons carry the change, the text carries the argument.
+
+Do not propose a change when the honest answer is "leave it". Do not propose moving the Day 15
+launch post, or anything already marked posted, without saying plainly why that is worth it.`;
+
+/**
+ * Calendar tools — used to PROPOSE changes, never to make them.
+ *
+ * The advisor could run these itself; the loop is a dozen lines. It does not,
+ * because the cost of a wrong write here is not symmetric with the convenience
+ * of a right one. Silently moving the launch post, or overwriting copy that took
+ * a session to get right, is expensive and easy to miss. A wrong proposal costs
+ * one glance.
+ *
+ * So the model expresses the change precisely, as structured arguments rather
+ * than prose to be re-parsed, and Michael taps Apply. He keeps the decision; the
+ * advisor stops being something that only talks.
+ */
+const CALENDAR_TOOLS = [
+  {
+    name: 'schedule_post',
+    description:
+      'Propose adding a new post to the calendar. Use when something new needs a slot. ' +
+      'Always check the channel cap for that week first and say in your reply what this displaces.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        title: { type: 'string', description: 'Short label for the calendar card.' },
+        brand: { type: 'string', enum: ['henway', 'mylua', 'blabbing'] },
+        channelLabel: { type: 'string', enum: ['PERSONAL', 'COMPANY', 'TIKTOK', 'CROSSOVER'] },
+        date: { type: 'string', description: 'YYYY-MM-DD' },
+        time: { type: 'string', description: 'HH:MM, 24h. PERSONAL 10:00, COMPANY 11:30 unless there is a reason.' },
+        copy: { type: 'string', description: 'The full post copy, in the right voice for the channel.' },
+        reason: { type: 'string', description: 'One line: why this slot, and what it costs.' },
+      },
+      required: ['title', 'brand', 'channelLabel', 'date', 'copy', 'reason'],
+    },
+  },
+  {
+    name: 'move_post',
+    description:
+      'Propose moving an existing post to a different date. Use the exact id from the live calendar.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string' },
+        date: { type: 'string', description: 'YYYY-MM-DD' },
+        reason: { type: 'string', description: 'One line: why it moves and what that costs.' },
+      },
+      required: ['id', 'date', 'reason'],
+    },
+  },
+  {
+    name: 'remove_post',
+    description:
+      'Propose removing a post entirely. Only when it is genuinely superseded, for example when ' +
+      'its argument has been folded into another post. Prefer moving over removing.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string' },
+        reason: { type: 'string', description: 'One line: why it should go rather than move.' },
+      },
+      required: ['id', 'reason'],
+    },
+  },
+];
 
 /** A compact view of what is actually scheduled, so advice is about the real calendar. */
 async function currentSchedule() {
@@ -275,12 +349,19 @@ export default async function handler(req, res) {
       max_tokens: 8000,
       system,
       messages,
+      tools: CALENDAR_TOOLS,
     });
 
     // Find the text block by type. Do NOT index content[0] — a thinking block can
     // sit there and has no .text, which would silently return an empty reply.
     const text = response.content.find(b => b.type === 'text')?.text || '';
-    return res.status(200).json({ reply: text });
+
+    // Tool calls are PROPOSALS, deliberately not executed here. See CALENDAR_TOOLS.
+    const actions = response.content
+      .filter(b => b.type === 'tool_use')
+      .map(b => ({ id: b.id, name: b.name, input: b.input }));
+
+    return res.status(200).json({ reply: text, actions });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: 'Advisor error', details: err.message });
