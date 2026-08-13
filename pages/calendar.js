@@ -66,6 +66,21 @@ export default function Calendar() {
         body: JSON.stringify({ id, date: newDate }),
       });
       setSavedPosts(prev => prev.map(p => p.id === id ? { ...p, date: newDate } : p));
+
+      // `selected` is separate state, so without this the detail panel keeps
+      // rendering the old post and the change looks like it did not happen.
+      setSelected(prev => (prev && prev.id === id ? { ...prev, date: newDate } : prev));
+
+      // The grid shows one week at a time. Moving a post to another week made it
+      // vanish from view, which reads as "nothing happened" rather than "it moved".
+      // Follow it.
+      // getWeekStart returns a Date, not a string. Normalise both to midday so
+      // DST cannot shift the week boundary by an hour and round the wrong way.
+      const thisMonday = getWeekStart(0);
+      thisMonday.setHours(12, 0, 0, 0);
+      const target = new Date(newDate + 'T12:00:00');
+      const diffWeeks = Math.round((target - thisMonday) / (7 * 86400000));
+      if (Number.isFinite(diffWeeks) && diffWeeks !== weekOffset) setWeekOffset(diffWeeks);
     } catch (e) { console.error(e); }
   }
 
