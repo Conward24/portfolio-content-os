@@ -89,6 +89,10 @@ export default async function handler(req, res) {
       p.copy || '',
       '',
       `— ${p.channelLabel || ''}${p.type ? ` · ${p.type}` : ''}`,
+      '',
+      'After posting: check in at +15, +45 and +90 minutes. Reply to every comment,',
+      'ask something back where it fits. Comments are worth 8-15x a like, and the',
+      'first 60-90 minutes decide how far this travels. After +90 you can leave it.',
     ].join('\n');
 
     lines.push(
@@ -103,15 +107,28 @@ export default async function handler(req, res) {
       `CATEGORIES:${esc((p.brand || '').toUpperCase())}`,
     );
 
-    // No alarm on something already posted.
+    // No alarms on something already posted.
     if (!done) {
-      lines.push(
-        'BEGIN:VALARM',
-        'ACTION:DISPLAY',
-        'TRIGGER:-PT15M',
-        fold(`DESCRIPTION:${esc(`Post in 15 min: ${p.title || ''}`)}`),
-        'END:VALARM',
-      );
+      // One nudge before, then the engagement windows after. LinkedIn decides how
+      // far a post travels on the first 60-90 minutes, replies inside that window
+      // are worth roughly a third more visibility, and a reply within 15 minutes
+      // of a comment lands hardest. So the alarms are front-loaded and then stop,
+      // rather than asking him to sit on it all day.
+      const alarms = [
+        ['-PT15M', `Post in 15 min: ${p.title || ''}`],
+        ['PT15M', 'Check-in 1 of 3. Reply to every comment now, this window counts most.'],
+        ['PT45M', 'Check-in 2 of 3. Second sweep, still inside the golden hour.'],
+        ['PT90M', 'Check-in 3 of 3. Golden hour closing, last replies land here.'],
+      ];
+      for (const [trigger, text] of alarms) {
+        lines.push(
+          'BEGIN:VALARM',
+          'ACTION:DISPLAY',
+          `TRIGGER:${trigger}`,
+          fold(`DESCRIPTION:${esc(text)}`),
+          'END:VALARM',
+        );
+      }
     }
     lines.push('END:VEVENT');
   }

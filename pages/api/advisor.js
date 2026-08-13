@@ -336,7 +336,12 @@ async function currentSchedule() {
     ]);
     if (!posts?.length) return 'The calendar is empty.';
     const done = posted || {};
-    const today = new Date().toISOString().slice(0, 10);
+    // This runs on Vercel, whose clock is UTC, so "today" has to be resolved in
+    // Michael's timezone or the advisor thinks it is tomorrow every evening and
+    // schedules a day ahead of the person asking.
+    const today = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit',
+    }).format(new Date());
     const rows = posts
       .filter(p => p.date)
       .sort((a, b) => (a.date === b.date ? (a.time || '').localeCompare(b.time || '') : a.date < b.date ? -1 : 1))

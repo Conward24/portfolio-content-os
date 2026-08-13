@@ -25,6 +25,37 @@ function dayLabel(date) {
   return new Date(date + 'T12:00:00').toLocaleDateString(undefined, { weekday: 'long' });
 }
 
+/**
+ * Engagement check-ins, computed from when he ACTUALLY posted rather than when
+ * it was scheduled, so the windows are right even when he posts late.
+ *
+ * LinkedIn decides how far a post travels on the first 60-90 minutes. Replies
+ * inside that window are worth roughly a third more visibility, a reply within
+ * 15 minutes of a comment lands hardest, and comments carry 8-15x the weight of
+ * a like. The useful shape is therefore three short sweeps and then stop, not
+ * grazing the notifications all day.
+ */
+const WINDOWS = [
+  { at: 15, label: 'Reply now', note: 'Highest-leverage sweep. Answer everything, ask something back.' },
+  { at: 45, label: 'Second sweep', note: 'Still inside the golden hour.' },
+  { at: 90, label: 'Last call', note: 'Golden hour closing. After this you can leave it.' },
+];
+
+function engagementState(postedAt, now) {
+  const t0 = new Date(postedAt).getTime();
+  const mins = Math.floor((now - t0) / 60000);
+  if (mins > 150) return null;                       // long done, stop nagging
+  const next = WINDOWS.find(w => mins < w.at);
+  const due = WINDOWS.filter(w => mins >= w.at).length;
+  return {
+    mins,
+    due,
+    next,
+    closesIn: Math.max(0, 90 - mins),
+    open: mins <= 90,
+  };
+}
+
 /** 07:30 → 7:30am. Reads faster than 24h on a glance. */
 function niceTime(t) {
   if (!t) return '';
@@ -68,6 +99,14 @@ export default function Today() {
   const [copied, setCopied] = useState(null);
   const [open, setOpen] = useState(null);
   const [saving, setSaving] = useState(null);
+  const [now, setNow] = useState(() => Date.now());
+
+  // The engagement windows are time-sensitive by definition, so the screen has to
+  // move on its own rather than showing whatever was true when it loaded.
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 30000);
+    return () => clearInterval(t);
+  }, []);
 
   useEffect(() => {
     Promise.all([
@@ -279,6 +318,29 @@ export default function Today() {
                         {isOpen ? '▴' : '▾'}
                       </span>
                     </div>
+
+                    {done && (() => {
+                      const e = engagementState(posted[p.id], now);
+                      if (!e) return null;
+                      return (
+                        <div style={{
+                          margin: '0 14px 12px', padding: '10px 12px', borderRadius: 8,
+                          background: e.open ? '#F0F7F2' : 'var(--bg2)',
+                          border: `1px solid ${e.open ? '#3FA46A' : 'var(--border)'}`,
+                        }}>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: e.open ? '#2C7A4B' : 'var(--text3)', marginBottom: 3 }}>
+                            {e.open
+                              ? `Golden hour · ${e.closesIn} min left`
+                              : 'Golden hour closed'}
+                          </div>
+                          <div style={{ fontSize: 12.5, color: 'var(--text2)', lineHeight: 1.55 }}>
+                            {e.next
+                              ? `Check-in ${e.due + 1} of 3 at +${e.next.at} min. ${e.next.note}`
+                              : 'All three check-ins done. Late comments still worth answering, just not urgent.'}
+                          </div>
+                        </div>
+                      );
+                    })()}
 
                     {isOpen && (
                       <div style={{ padding: '0 14px 14px' }}>

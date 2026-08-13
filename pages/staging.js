@@ -60,12 +60,18 @@ function getNextWeekday(dayName, afterDate = new Date()) {
   let daysAhead = target - current;
   if (daysAhead <= 0) daysAhead += 7;
   d.setDate(d.getDate() + daysAhead);
-  return d.toISOString().split('T')[0];
+  // Local, not UTC. toISOString() reports tomorrow's date all evening in Eastern.
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
 function getDayOfWeek(dateStr) {
   const d = new Date(dateStr + 'T12:00:00');
   return ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getDay()];
+}
+
+function localToday() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
 export default function Staging() {
@@ -484,7 +490,7 @@ export default function Staging() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
               <div>
                 <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 4 }}>Date</div>
-                <input type="date" value={scheduleDate} onChange={e => setScheduleDate(e.target.value)} min={new Date().toISOString().split('T')[0]} />
+                <input type="date" value={scheduleDate} onChange={e => setScheduleDate(e.target.value)} min={localToday()} />
               </div>
               <div>
                 <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 4 }}>Time (ET)</div>
