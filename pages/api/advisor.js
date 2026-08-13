@@ -75,7 +75,26 @@ university + grant programs" framing is retired, do not use it)
   are holding a summary, not a result.
 - Consent: Michael Cole (Magnolia pilot) and Rossi (dentist) have both cleared their
   verbatim quotes. Everyone else in the corpus is aggregate-only, no per-person data.
-- Website: henwayai.com. Status: pre-launch, site gated until launch day.
+- Website: henwayai.com. STATUS as of 2026-08-13: pre-launch. Target launch Mon Aug 31 2026
+  (fallback Sep 14; Sep 7 is Labor Day, avoid). Decision gate Fri Aug 28 on whether the bug
+  list is clear. Content for the whole 30-day arc is built and scheduled; the launch date is
+  gated on the app, not on assets.
+- PATENT: a US provisional was FILED 2026-08-11 (64/131,433). The launch hold is released and
+  the coming-soon gate came down locally the same day. "Patent pending" is now accurate and
+  usable in public copy. Do NOT describe the mechanism.
+- Pricing ladder: Free / $29 Founder / $139 Consultant / $249 Agency, plus $19 Founding Hens
+  at 25 seats as the launch offer. Founding Hens is a locked rate, not a free plan.
+- ⚠️ WHITE-LABEL AND CUSTOM DOMAIN ARE BUILT BUT DORMANT. They need Vercel Pro plus Railway
+  env vars to switch on, yet the Consultants page implies they are ready. Never promise a
+  $139 or $249 buyer a live white-label domain without checking it has actually been
+  activated. Advertising a dormant feature to the paying beachhead is the expensive mistake.
+- Shipped and real, so safe to reference: the Coop referral and gamification layer, the
+  in-app preview then refine loop, genuine voice input, Google sign-in, and the desktop home
+  base at /dashboard.
+- Michael's live founder credentials that support the HR/L&D and consultant motions: advisor
+  to the Amplify Allyship Future of Work Advisory Council 2026-27, and Henway is in the
+  Pharrell Williams Black Ambition 2026 Fundable Founders Learning Lab, implementation
+  Aug 18 to Oct 20.
 
 BLABBING
 - AI market intelligence and sentiment monitoring platform
