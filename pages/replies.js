@@ -27,28 +27,37 @@ export default function Replies() {
   const [err, setErr] = useState('');
   const [copied, setCopied] = useState(null);
   const boxRef = useRef(null);
+  const fileRef = useRef(null);
 
   // Recent + upcoming posts, so a comment can be tied to what it's replying to.
   useEffect(() => {
     fetch('/api/calendar')
       .then(r => r.json())
       .then(d => {
+        // No slice. Sorting newest-first and cutting at 40 dropped the oldest
+        // posts, and the only MyLÚA post was the oldest — so the dropdown showed
+        // 40 Henway posts and nothing else. There are only ~44 in total.
         const all = (d.posts || []).filter(p => p.copy);
         all.sort((a, b) => (a.date < b.date ? 1 : -1));
-        setPosts(all.slice(0, 40));
+        setPosts(all);
       })
       .catch(() => {});
   }, []);
 
-  // Screenshot-and-paste is the actual workflow, so make paste the primary input.
+  /** Phones have no paste-image gesture, so a file input is the only way in. */
+  function readImage(file) {
+    if (!file || !file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = () => setImage(reader.result);
+    reader.readAsDataURL(file);
+  }
+
+  // Paste is the desktop workflow; on mobile the button below does the same job.
   useEffect(() => {
     function onPaste(e) {
       const item = [...(e.clipboardData?.items || [])].find(i => i.type.startsWith('image/'));
       if (!item) return;
-      const file = item.getAsFile();
-      const reader = new FileReader();
-      reader.onload = () => setImage(reader.result);
-      reader.readAsDataURL(file);
+      readImage(item.getAsFile());
     }
     window.addEventListener('paste', onPaste);
     return () => window.removeEventListener('paste', onPaste);
@@ -90,7 +99,7 @@ export default function Replies() {
       <div style={{ maxWidth: 780, margin: '0 auto', padding: '0 16px 64px' }}>
         <h1 style={{ fontSize: 22, marginBottom: 4 }}>Replies</h1>
         <p style={{ fontSize: 13, color: 'var(--text3)', marginTop: 0, marginBottom: 20 }}>
-          Paste a comment or screenshot it and hit ⌘V anywhere on this page.
+          Paste the comment, or add a screenshot. On desktop you can just hit ⌘V.
         </p>
 
         <div className="card mb-16">
@@ -133,7 +142,11 @@ export default function Replies() {
             onChange={e => setPostId(e.target.value)}
             style={{ width: '100%', fontSize: 13, marginBottom: 10 }}
           >
-            <option value="">Which post is it on? (optional, but makes the reply specific)</option>
+            <option value="">
+              {filteredPosts.length
+                ? 'Which post is it on? (optional, but makes the reply specific)'
+                : `No ${BRANDS[brand]?.short || brand} posts scheduled yet`}
+            </option>
             {filteredPosts.map(p => (
               <option key={p.id} value={p.id}>
                 {p.date} · {p.channelLabel} · {p.title.slice(0, 60)}
@@ -167,9 +180,30 @@ export default function Replies() {
             </div>
           )}
 
-          <button className="btn" onClick={draft} disabled={loading} style={{ fontSize: 13 }}>
-            {loading ? 'Reading it…' : 'Draft replies'}
-          </button>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            style={{ display: 'none' }}
+            onChange={e => { readImage(e.target.files?.[0]); e.target.value = ''; }}
+          />
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              className="btn"
+              onClick={() => fileRef.current?.click()}
+              style={{ fontSize: 13, padding: '11px 14px' }}
+            >
+              {image ? 'Replace screenshot' : 'Add screenshot'}
+            </button>
+            <button
+              className="btn"
+              onClick={draft}
+              disabled={loading}
+              style={{ flex: 1, fontSize: 13, fontWeight: 600, padding: '11px 0' }}
+            >
+              {loading ? 'Reading it…' : 'Draft replies'}
+            </button>
+          </div>
           {err && <span style={{ fontSize: 12, color: '#A32D2D', marginLeft: 12 }}>{err}</span>}
         </div>
 
