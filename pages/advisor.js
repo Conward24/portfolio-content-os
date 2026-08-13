@@ -95,17 +95,19 @@ function ProposedChanges({ actions }) {
           }),
         });
       } else if (a.name === 'move_post') {
-        await fetch('/api/calendar', {
+        const r = await fetch('/api/calendar', {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ id: a.input.id, date: a.input.date }),
         });
+        if (!r.ok) throw new Error('no such post');
       } else if (a.name === 'remove_post') {
-        await fetch('/api/calendar', {
+        const r = await fetch('/api/calendar', {
           method: 'DELETE',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ id: a.input.id }),
         });
+        if (!r.ok) throw new Error('no such post');
       }
       setState(s => ({ ...s, [i]: 'done' }));
     } catch (e) {

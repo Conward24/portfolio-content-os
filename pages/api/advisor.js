@@ -312,7 +312,9 @@ async function currentSchedule() {
     const rows = posts
       .filter(p => p.date)
       .sort((a, b) => (a.date === b.date ? (a.time || '').localeCompare(b.time || '') : a.date < b.date ? -1 : 1))
-      .map(p => `${p.date} ${p.time || ''} [${p.brand}/${p.channelLabel}] ${p.title}${done[p.id] ? ' ✅posted' : ''}`);
+      // The id is what move_post and remove_post need. Without it the model has
+      // no choice but to invent one, and the write then silently matches nothing.
+      .map(p => `${p.date} ${p.time || ''} [${p.brand}/${p.channelLabel}] ${p.title} (id: ${p.id})${done[p.id] ? ' ✅posted' : ''}`);
     return `Today is ${today}. ${posts.length} posts scheduled:\n${rows.join('\n')}`;
   } catch (e) {
     console.error('[advisor] schedule lookup failed', e);

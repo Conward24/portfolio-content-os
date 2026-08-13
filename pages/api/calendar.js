@@ -32,6 +32,11 @@ export default async function handler(req, res) {
     if (!id || !date) return res.status(400).json({ error: 'Missing id or date' });
     try {
       const current = await redis.get(CALENDAR_KEY) || [];
+      // Report a miss instead of writing the array back untouched and calling it
+      // success. A silent no-op here reads as "applied" to whoever asked.
+      if (!current.some(p => p.id === id)) {
+        return res.status(404).json({ error: `No post with id ${id}` });
+      }
       const updated = current.map(p => p.id === id ? { ...p, date } : p);
       await redis.set(CALENDAR_KEY, updated);
       return res.status(200).json({ success: true });
@@ -45,6 +50,9 @@ export default async function handler(req, res) {
     if (!id) return res.status(400).json({ error: 'Missing id' });
     try {
       const current = await redis.get(CALENDAR_KEY) || [];
+      if (!current.some(p => p.id === id)) {
+        return res.status(404).json({ error: `No post with id ${id}` });
+      }
       const updated = current.filter(p => p.id !== id);
       await redis.set(CALENDAR_KEY, updated);
       return res.status(200).json({ success: true });
