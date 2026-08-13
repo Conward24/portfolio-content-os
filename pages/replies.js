@@ -103,7 +103,7 @@ export default function Replies() {
                 style={{
                   fontSize: 12,
                   padding: '5px 12px',
-                  background: platform === p.id ? 'var(--text1)' : 'transparent',
+                  background: platform === p.id ? 'var(--text)' : 'transparent',
                   color: platform === p.id ? '#fff' : 'var(--text2)',
                 }}
               >
@@ -216,7 +216,7 @@ export default function Replies() {
             {result.replies.map((r, i) => (
               <div className="card mb-16" key={i}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text1)' }}>{r.angle}</span>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)' }}>{r.angle}</span>
                   <button className="btn" onClick={() => copy(r.text, i)} style={{ fontSize: 12, padding: '4px 12px' }}>
                     {copied === i ? 'Copied' : 'Copy'}
                   </button>

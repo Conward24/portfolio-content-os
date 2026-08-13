@@ -67,6 +67,7 @@ export default function Today() {
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(null);
   const [open, setOpen] = useState(null);
+  const [saving, setSaving] = useState(null);
 
   useEffect(() => {
     Promise.all([
@@ -101,6 +102,45 @@ export default function Today() {
     setCopied(id);
     if (navigator.vibrate) navigator.vibrate(8);
     setTimeout(() => setCopied(null), 1800);
+  }
+
+  /**
+   * Get an asset onto the phone.
+   *
+   * iOS Safari has no download affordance on a <video> element, and the
+   * `download` attribute is ignored on a cross-origin URL, so tapping a blob
+   * link just navigates and plays it. The route that actually works is the Web
+   * Share API with a File: it opens the native sheet, which offers "Save Video"
+   * straight to Photos and shares directly into TikTok or Instagram.
+   *
+   * Fetching is possible because the blob store sends access-control-allow-origin: *.
+   * Falls back to an object-URL download, where `download` IS honoured because
+   * blob: counts as same-origin.
+   */
+  async function saveAsset(asset) {
+    setSaving(asset.id);
+    try {
+      const res = await fetch(asset.url);
+      const blob = await res.blob();
+      const file = new File([blob], asset.name, { type: blob.type });
+
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file] });
+      } else {
+        const href = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = href;
+        a.download = asset.name;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(href), 30000);
+      }
+    } catch (e) {
+      // AbortError just means he dismissed the share sheet, which is not a failure.
+      if (e?.name !== 'AbortError') window.open(asset.url, '_blank');
+    }
+    setSaving(null);
   }
 
   const t = todayStr();
@@ -172,7 +212,7 @@ export default function Today() {
                   padding: '8px 2px 6px',
                   position: 'sticky',
                   top: 0,
-                  background: 'var(--bg1)',
+                  background: 'var(--bg)',
                   zIndex: 2,
                 }}
               >
@@ -252,32 +292,44 @@ export default function Today() {
 
                         {assets.length > 0 && (
                           <>
-                            <div style={{ display: 'flex', gap: 8, overflowX: 'auto', marginTop: 10, paddingBottom: 2 }}>
-                              {assets.map(a =>
-                                /\.mp4$/i.test(a.name) ? (
-                                  <video
-                                    key={a.id}
-                                    src={a.url}
-                                    controls
-                                    playsInline
-                                    preload="metadata"
-                                    style={{ height: 190, borderRadius: 8, flex: '0 0 auto', background: '#000' }}
-                                  />
-                                ) : (
-                                  <a key={a.id} href={a.url} target="_blank" rel="noopener noreferrer" style={{ flex: '0 0 auto' }}>
-                                    <img
-                                      src={a.url}
-                                      alt={a.name}
-                                      style={{ height: 104, borderRadius: 8, border: '1px solid var(--border)', display: 'block' }}
-                                    />
-                                  </a>
-                                ),
-                              )}
+                            <div style={{ display: 'flex', gap: 10, overflowX: 'auto', marginTop: 10, paddingBottom: 2 }}>
+                              {assets.map(a => {
+                                const isVid = /\.mp4$/i.test(a.name);
+                                return (
+                                  <div key={a.id} style={{ flex: '0 0 auto', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                    {isVid ? (
+                                      <video
+                                        src={a.url}
+                                        controls
+                                        playsInline
+                                        preload="metadata"
+                                        style={{ height: 190, borderRadius: 8, background: '#000', display: 'block' }}
+                                      />
+                                    ) : (
+                                      <img
+                                        src={a.url}
+                                        alt={a.name}
+                                        style={{ height: 190, borderRadius: 8, border: '1px solid var(--border)', display: 'block' }}
+                                      />
+                                    )}
+                                    {/* The only reliable way onto an iPhone: the native share
+                                        sheet, which offers Save to Photos and posts straight
+                                        into TikTok or Instagram. */}
+                                    <button
+                                      className="btn"
+                                      onClick={() => saveAsset(a)}
+                                      disabled={saving === a.id}
+                                      style={{ padding: '10px 0', fontSize: 13, fontWeight: 600, width: '100%' }}
+                                    >
+                                      {saving === a.id ? 'Preparing…' : isVid ? 'Save video' : 'Save image'}
+                                    </button>
+                                  </div>
+                                );
+                              })}
                             </div>
                             <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 7 }}>
-                              {hasVideo
-                                ? 'Tap ⋯ on the player → Download to save it to Photos.'
-                                : 'Tap to open, then long-press to save to Photos.'}
+                              Save opens the share sheet. Choose Save to Photos, or send it
+                              straight to TikTok or Instagram.
                             </div>
                           </>
                         )}

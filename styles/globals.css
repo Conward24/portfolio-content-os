@@ -394,3 +394,10 @@ textarea { resize: none; }
      usable for a quick look. */
   .cal-grid { overflow-x: auto; }
 }
+
+/* Installed to the home screen, iOS hands the web view the full display and
+   the top inset is ours to respect. Zero in a normal browser tab, so it costs
+   nothing there. */
+@media (display-mode: standalone) {
+  .main-content { padding-top: env(safe-area-inset-top); }
+}
