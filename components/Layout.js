@@ -19,6 +19,7 @@ const NAV = [
 const MOBILE_NAV = [
   { href: '/today', label: 'Today', id: 'today', icon: '◆' },
   { href: '/replies', label: 'Replies', id: 'replies', icon: '↩' },
+  { href: '/advisor', label: 'Advisor', id: 'advisor', icon: '◉' },
   { href: '/library', label: 'Assets', id: 'library', icon: '▤' },
   { href: '/calendar', label: 'Calendar', id: 'calendar', icon: '▦' },
 ];
