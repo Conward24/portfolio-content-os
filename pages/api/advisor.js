@@ -1,4 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
+import { redis } from '../../lib/redis';
+import { LINKEDIN_RULES, TIKTOK_RULES, PLATFORM_RULES_VERIFIED } from '../../lib/platform';
+import { MICHAEL_VOICE } from '../../lib/voice';
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -56,11 +59,17 @@ BLABBING
 - Website: blabbing.io
 
 SCHEDULING STRATEGY
-- Mike's personal LinkedIn is the primary engine (8x more reach than company pages)
-- 4 channels: Mike Personal, MyLÚA Company (3x/week Mon/Wed/Fri), Henway Company (2x/week Tue/Thu), Blabbing Company (3x/week Mon/Wed/Fri)
-- Best days for Mike personal: Tue-Fri, 7-9am or 5-6pm ET
+- Mike's personal LinkedIn is the primary engine. 2026 data puts it at 500%+ more reach
+  than a company page for identical content, and 238% more comments.
+- 4 channels: Mike Personal, MyLÚA Company, Henway Company, Blabbing Company. For the
+  Henway launch window the live cadence is the one in the scheduling rules below
+  (company ~4/week, personal 1-2/week for Henway), not this older split.
+- Best days for Mike personal: Tue-Thu. Times CORRECTED 2026-08-12: post 10am-2pm ET,
+  NOT 7-9am. See the verified platform rules below, which supersede anything here.
 - Never post the same caption on Mike's profile and a company page
-- External links ALWAYS in first comment, never in caption body (kills reach ~60%)
+- External links: the first-comment workaround is DEAD as of 2026-08-12. LinkedIn detects
+  bridge behaviour and penalises a comment link the same as a body link. See the verified
+  platform rules below.
 - Hashtags: LinkedIn 3 (niche, PascalCase), Instagram 8-10 (community), X 0-1
 - Company-page posts are amplified by Mike commenting on them from his personal profile
   within the first hour, with an actual opinion. Silent resharing does not do it.
@@ -182,6 +191,61 @@ STYLE
 - Never use: "Great question!", "Absolutely!", "Certainly!", "Of course!"
 - Talk like a strategic advisor who has read everything about his companies and cares about the outcome.`;
 
+/**
+ * The scheduling constraints that reconciliation actually runs on. These lived
+ * only in LAUNCH-CALENDAR.md and in whoever happened to be reading it, which is
+ * why every "where does this new thing go" decision had to be made by hand.
+ */
+const SCHEDULING_RULES = `## The Henway launch arc
+Day 1 = Mon Aug 17 2026. Launch = Day 15 = Mon Aug 31 (fallback Sep 14; avoid Sep 7, Labor Day).
+- Week 1 (Aug 17): establish the problem. Pure authority. No product, no CTA, no link.
+- Week 2 (Aug 24): name the gap, segment the audience. Still no hard CTA.
+- Week 3 (Aug 31): LAUNCH. Doors open, Founding Hens. Not feature-led.
+- Week 4 (Sep 7): proof and conversion.
+Weeks 1 and 2 are deliberately unsellable. They buy the right to be heard in Week 3.
+
+## Channel caps — check these before scheduling anything
+- LinkedIn PERSONAL: 1-2 Henway posts/week. The profile is shared with MyLÚA and Blabbing,
+  so this is the scarce resource and the reason things get displaced.
+- LinkedIn COMPANY: ~4/week. Launch week may deliberately run 5.
+- TikTok: ~4/week.
+- One post per profile per day. Two personal posts in a day splits his own engagement.
+
+## Hold-backs — do not schedule these early
+- "The Walk" film waits for Day 15. Spending it earlier wastes the only asset that feels
+  like an arrival.
+- Cole's quotes wait for launch week; proof lands hardest when there is somewhere to convert.
+- The Refinement Phrasebook waits for Week 4; it is a lead magnet and needs a live funnel.
+
+## How to reconcile a new post
+1. Is it date-anchored (an event, a kickoff, a deadline) or evergreen? Date-anchored content
+   wins a contested slot; evergreen moves.
+2. Which channel does it belong on, and is that channel at its cap that week?
+3. What does it displace, and where does the displaced post go?
+4. Does it fit the week's job in the arc, or does it undercut it?
+5. Say the cost out loud. Every insertion moves something.`;
+
+/** A compact view of what is actually scheduled, so advice is about the real calendar. */
+async function currentSchedule() {
+  try {
+    const [posts, posted] = await Promise.all([
+      redis.get('portfolio:calendar:posts'),
+      redis.get('portfolio:calendar:posted'),
+    ]);
+    if (!posts?.length) return 'The calendar is empty.';
+    const done = posted || {};
+    const today = new Date().toISOString().slice(0, 10);
+    const rows = posts
+      .filter(p => p.date)
+      .sort((a, b) => (a.date === b.date ? (a.time || '').localeCompare(b.time || '') : a.date < b.date ? -1 : 1))
+      .map(p => `${p.date} ${p.time || ''} [${p.brand}/${p.channelLabel}] ${p.title}${done[p.id] ? ' ✅posted' : ''}`);
+    return `Today is ${today}. ${posts.length} posts scheduled:\n${rows.join('\n')}`;
+  } catch (e) {
+    console.error('[advisor] schedule lookup failed', e);
+    return 'Calendar unavailable this request — say so rather than guessing at it.';
+  }
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
 
@@ -191,14 +255,31 @@ export default async function handler(req, res) {
   // Messages can contain text strings or multimodal content blocks (text + image)
   // Pass them through to the API as-is — the frontend builds the correct structure
   try {
+    // Everything needed to reconcile a change lives in separate files. Compose it
+    // here so the advisor reasons about the real schedule instead of in the abstract.
+    const system = [
+      ADVISOR_SYSTEM,
+      SCHEDULING_RULES,
+      `## Platform rules (verified ${PLATFORM_RULES_VERIFIED} — re-check if far past that date)`,
+      LINKEDIN_RULES,
+      TIKTOK_RULES,
+      `## Michael's personal LinkedIn voice (use for PERSONAL-profile drafts; company posts use brand voice)`,
+      MICHAEL_VOICE,
+      `## THE LIVE CALENDAR\n${await currentSchedule()}`,
+    ].join('\n\n');
+
     const response = await client.messages.create({
-      model: 'claude-sonnet-4-6', // Sonnet (vision-capable); claude-sonnet-4-20250514 retired 2026-06-15
-      max_tokens: 1000,
-      system: ADVISOR_SYSTEM,
+      model: 'claude-opus-5',
+      // Thinking is on by default on this model and max_tokens caps thinking plus
+      // text together, so 1000 would have truncated mid-answer.
+      max_tokens: 8000,
+      system,
       messages,
     });
 
-    const text = response.content[0]?.text || '';
+    // Find the text block by type. Do NOT index content[0] — a thinking block can
+    // sit there and has no .text, which would silently return an empty reply.
+    const text = response.content.find(b => b.type === 'text')?.text || '';
     return res.status(200).json({ reply: text });
   } catch (err) {
     console.error(err);
