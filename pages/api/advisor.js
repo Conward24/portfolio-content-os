@@ -310,7 +310,14 @@ const CALENDAR_TOOLS = [
         channelLabel: { type: 'string', enum: ['PERSONAL', 'COMPANY', 'TIKTOK', 'CROSSOVER'] },
         date: { type: 'string', description: 'YYYY-MM-DD' },
         time: { type: 'string', description: 'HH:MM, 24h. PERSONAL 10:00, COMPANY 11:30 unless there is a reason.' },
-        copy: { type: 'string', description: 'The full post copy, in the right voice for the channel.' },
+        copy: {
+          type: 'string',
+          description:
+            'The full post copy, ready to paste, in the right voice for the channel. Never a ' +
+            'pointer to a file or a production note ("caption in POST-KIT.md", "light Friday ' +
+            'asset"). He posts from his phone and the calendar is the only thing he has open. ' +
+            'If a source doc holds the copy, read it and inline the copy here.',
+        },
         reason: { type: 'string', description: 'One line: why this slot, and what it costs.' },
       },
       required: ['title', 'brand', 'channelLabel', 'date', 'copy', 'reason'],
