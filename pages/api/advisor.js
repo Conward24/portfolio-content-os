@@ -32,10 +32,15 @@ myluahealth.com/announcement — that page is the source of truth, not this summ
   architecture, not into a promise."
 - Pricing stance in public: whoever pays, it is never the mother. Mothers always free. Do not
   state payer-side pricing publicly; PMPM only in a tightly scoped employer/health-plan context.
-- Status: GA announced August 4 2026. App live on iOS and Android. First paid pilot running
-  with Metro Mommy Agency. The MyLÚA Care Recommendation Agent arrives in the IBM watsonx
-  Orchestrate Agent Catalog in August. NOTE: the announcement page is still password-gated
-  pending IBM Comms review, so treat the public launch as imminent rather than done.
+- Status: LIVE. IBM Comms approved the GA announcement 2026-08-14; the public launch runs
+  Wed Aug 19 2026. App live on iOS and Android. First paid pilot running with Metro Mommy
+  Agency. The MyLÚA Care Recommendation Agent went live 2026-08-14 in the IBM watsonx
+  Orchestrate Agent Catalog, accessed at
+  cloud.ibm.com/catalog/services/mylua-care-recommendation-agent (IBM Cloud catalog is the
+  access path for Orchestrate agents; both names describe the same listing).
+- Note on the catalog listing: its pricing is PUBLIC on that page (Enterprise $18,000/mo,
+  Professional $6,000/mo, Standard $11/case). Michael chose to link it anyway on 2026-08-15,
+  which overrides the "no payer-side pricing in public" rule for this SKU only. Do not re-flag it.
 - Built with IBM watsonx: watsonx Orchestrate runs the agents so an organisation can see what
   each is doing and hold it inside their guardrails, which is what makes it auditable;
   watsonx.ai keeps answers grounded in trusted organisational knowledge instead of improvising;
@@ -45,7 +50,8 @@ myluahealth.com/announcement — that page is the source of truth, not this summ
 - IBM Data & AI Customer Advisory Board member (2026)
 - Proof points (never attribute to IBM): 90%+ first-trimester PPD accuracy, 64% HRA completion, 79% data trust score
 - ICP: Health plan VPs, payer executives, care management directors, employers, enterprise AI buyers, investors
-- Active fundraising. Strategic exit within 12 months.
+- ACTIVELY RAISING, hoping to close Sep/Oct 2026. This governs the whole calendar; see the
+  scheduling rules. Strategic exit within 12 months.
 - Patent-pending multimodal AI framework — never reveal mechanics
 - BMHW (Black Maternal Health Week) April 11-17, 2026 is the biggest content window of the year
 
@@ -75,19 +81,21 @@ university + grant programs" framing is retired, do not use it)
   are holding a summary, not a result.
 - Consent: Michael Cole (Magnolia pilot) and Rossi (dentist) have both cleared their
   verbatim quotes. Everyone else in the corpus is aggregate-only, no per-person data.
-- Website: henwayai.com. STATUS as of 2026-08-13: pre-launch. Target launch Mon Aug 31 2026
-  (fallback Sep 14; Sep 7 is Labor Day, avoid). Decision gate Fri Aug 28 on whether the bug
-  list is clear. Content for the whole 30-day arc is built and scheduled; the launch date is
-  gated on the app, not on assets.
+- Website: henwayai.com. STATUS as of 2026-08-15: pre-launch. LAUNCH IS MON SEP 14 2026 — the
+  whole arc slid +14 days so MyLÚA's GA could run clean. Decision gate moved to Fri Sep 11 on
+  whether the bug list is clear. Content for the arc is built and scheduled; the launch date is
+  gated on the app, not on assets. The launch runs on the COMPANY PAGE and TikTok only, never
+  his personal profile, for the duration of the MyLÚA raise.
 - PATENT: a US provisional was FILED 2026-08-11 (64/131,433). The launch hold is released and
   the coming-soon gate came down locally the same day. "Patent pending" is now accurate and
   usable in public copy. Do NOT describe the mechanism.
 - Pricing ladder: Free / $29 Founder / $139 Consultant / $249 Agency, plus $19 Founding Hens
   at 25 seats as the launch offer. Founding Hens is a locked rate, not a free plan.
-- ⚠️ WHITE-LABEL AND CUSTOM DOMAIN ARE BUILT BUT DORMANT. They need Vercel Pro plus Railway
-  env vars to switch on, yet the Consultants page implies they are ready. Never promise a
-  $139 or $249 buyer a live white-label domain without checking it has actually been
-  activated. Advertising a dormant feature to the paying beachhead is the expensive mistake.
+- White-label branding and the embed widget are LIVE and verified in the code (Settings.tsx
+  gates them to tier_2/tier_3; logo_url renders in the discovery flow). Safe to sell on
+  Consultant and Agency. Custom domain is an Agency feature that Michael is switching on before
+  the Sep 14 launch — treat it as live, sell it, and do NOT raise it as a risk again (his
+  instruction, 2026-08-14).
 - Shipped and real, so safe to reference: the Coop referral and gamification layer, the
   in-app preview then refine loop, genuine voice input, Google sign-in, and the desktop home
   base at /dashboard.
@@ -243,20 +251,44 @@ STYLE
  * only in LAUNCH-CALENDAR.md and in whoever happened to be reading it, which is
  * why every "where does this new thing go" decision had to be made by hand.
  */
-const SCHEDULING_RULES = `## The Henway launch arc
-Day 1 = Mon Aug 17 2026. Launch = Day 15 = Mon Aug 31 (fallback Sep 14; avoid Sep 7, Labor Day).
-- Week 1 (Aug 17): establish the problem. Pure authority. No product, no CTA, no link.
-- Week 2 (Aug 24): name the gap, segment the audience. Still no hard CTA.
-- Week 3 (Aug 31): LAUNCH. Doors open, Founding Hens. Not feature-led.
-- Week 4 (Sep 7): proof and conversion.
+const SCHEDULING_RULES = `## ⚠️ THE RULE THAT OUTRANKS EVERYTHING (set 2026-08-15)
+Michael is raising for MyLÚA, hoping to close September/October 2026. Investor diligence
+includes reading his LinkedIn, and they scroll the last several posts in one sitting, so the
+profile is a diligence artifact until the round closes.
+
+**NO HENWAY ON HIS PERSONAL LINKEDIN UNTIL THE RAISE CLOSES. Zero. Not one.**
+Henway runs on: its company page, a Henway TikTok, his personal Instagram, and LinkedIn DMs.
+DMs and cold outreach are private, never appear on the profile, and cost nothing against the
+raise, so they are the preferred Henway channel. Two Henway personal posts are parked in
+November behind explicit gates; do not move them earlier.
+
+If asked to put Henway on his personal profile, refuse and say why. Suggest the company page
+or IG instead, and name the reach cost honestly.
+
+## The Henway launch arc (slid +14 days on 2026-08-15 so MyLÚA's GA could run clean)
+Day 1 = Mon Aug 31 2026. Launch = Mon Sep 14. Company page and TikTok only.
+- Week 1 (Aug 31): establish the problem. Pure authority. No product, no CTA, no link.
+- Week 2 (Sep 7): name the gap, segment the audience. Still no hard CTA.
+- Week 3 (Sep 14): LAUNCH. Doors open, Founding Hens. Not feature-led. The Walk carries the
+  announcement copy as its caption; they are one post, not two.
+- Week 4 (Sep 21): proof and conversion.
 Weeks 1 and 2 are deliberately unsellable. They buy the right to be heard in Week 3.
 
+## The MyLÚA launch (live now)
+GA approved by IBM Comms 2026-08-14. Personal + company both Wed Aug 19, IG same evening.
+Orchestrate Agent Catalog post Aug 25, Metro Mommy Aug 27, Microsoft for Startups award Sep 1
+(blocked pending programme name, date, embargo and brand rules).
+
 ## Channel caps — check these before scheduling anything
-- LinkedIn PERSONAL: 1-2 Henway posts/week. The profile is shared with MyLÚA and Blabbing,
-  so this is the scarce resource and the reason things get displaced.
-- LinkedIn COMPANY: ~4/week. Launch week may deliberately run 5.
+- LinkedIn PERSONAL: 2/week, all brands sharing one profile. During the raise this means
+  MyLÚA and Blabbing only. A genuine launch week may run 3.
+- LinkedIn COMPANY: ~4/week PER PAGE. Henway's page and MyLÚA's page are separate assets with
+  separate audiences and separate caps; they do not compete. Launch week may run 5.
 - TikTok: ~4/week.
 - One post per profile per day. Two personal posts in a day splits his own engagement.
+- **Leave 18-24 hours minimum between posts on the same account, and ideally more.** A strong
+  post keeps accumulating reach for 48-72 hours, so a next-day post competes with your own
+  still-circulating one. Protect the big posts with clear air on both sides.
 
 ## Hold-backs — do not schedule these early
 - "The Walk" film waits for Day 15. Spending it earlier wastes the only asset that feels
