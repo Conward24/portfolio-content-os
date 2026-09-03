@@ -1,6 +1,35 @@
 import { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
-import { BRANDS, SENTIMENT_TYPES } from '../lib/constants';
+import { BRANDS, SENTIMENT_TYPES, labelColors } from '../lib/constants';
+
+/** Small "🎥 camera" marker for posts he has to film (post.kind === 'camera'). */
+function CameraChip({ style }) {
+  return (
+    <span style={{
+      fontSize: 10, fontWeight: 700, letterSpacing: '.04em', padding: '2px 6px', borderRadius: 4,
+      background: '#FFF4D6', color: '#7A5A00', border: '0.5px solid #F0D48A', whiteSpace: 'nowrap', ...style,
+    }}>🎥 camera</span>
+  );
+}
+
+/** Labeled text block for the detail panel (script, notes, first comment). */
+function DetailBlock({ label, text, onCopy, copied, accent }) {
+  return (
+    <div style={{ marginBottom: 10 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+        <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: accent || 'var(--text3)' }}>{label}</span>
+        {onCopy && (
+          <button className="btn" style={{ fontSize: 11, padding: '3px 10px' }} onClick={onCopy}>{copied ? 'Copied ✓' : `Copy ${label.toLowerCase()}`}</button>
+        )}
+      </div>
+      <div style={{
+        fontSize: 13, color: 'var(--text2)', lineHeight: 1.75,
+        padding: '12px 14px', background: 'var(--bg2)', borderRadius: 8,
+        whiteSpace: 'pre-line', borderLeft: accent ? `3px solid ${accent}` : undefined,
+      }}>{text}</div>
+    </div>
+  );
+}
 
 // Sat and Sun were missing entirely, so every weekend post was invisible.
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -35,6 +64,13 @@ export default function Calendar() {
   const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
+  const [copied, setCopied] = useState(null);   // 'copy' | 'script' | 'firstComment'
+
+  function copyField(field, text) {
+    navigator.clipboard.writeText(text || '');
+    setCopied(field);
+    setTimeout(() => setCopied(null), 1800);
+  }
 
   useEffect(() => {
     loadCalendar();
@@ -170,6 +206,16 @@ export default function Calendar() {
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 10 }}>
               <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                 <span className={`brand-badge badge-${selected.brand}`}>{BRANDS[selected.brand]?.name}</span>
+                {selected.channelLabel && (() => {
+                  const lc = labelColors(selected.channelLabel);
+                  return (
+                    <span style={{
+                      fontSize: 10, fontWeight: 800, letterSpacing: '.06em', padding: '3px 7px', borderRadius: 4,
+                      background: lc ? lc.bg : 'var(--bg3)', color: lc ? lc.fg : 'var(--text2)',
+                    }}>{selected.channelLabel}</span>
+                  );
+                })()}
+                {selected.kind === 'camera' && <CameraChip />}
                 {selected.sentiment && (
                   <span className={`stag stag-${selected.sentiment}`}>{SENTIMENT_TYPES[selected.sentiment]?.name}</span>
                 )}
@@ -178,7 +224,7 @@ export default function Calendar() {
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
                 <button className="btn" style={{ fontSize: 12, padding: '5px 12px' }}
-                  onClick={() => navigator.clipboard.writeText(selected.copy)}>Copy</button>
+                  onClick={() => copyField('copy', selected.copy)}>{copied === 'copy' ? 'Copied ✓' : 'Copy'}</button>
                 {selected.id?.startsWith('post-') && (
                   <button className="btn" style={{ fontSize: 12, padding: '5px 12px', color: '#A32D2D' }}
                     onClick={() => deletePost(selected.id)}>Delete</button>
@@ -188,11 +234,29 @@ export default function Calendar() {
               </div>
             </div>
             <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>{selected.title}</div>
+            {/* Camera posts: the on-camera script sits ABOVE the caption. He films first, captions second. */}
+            {selected.script && (
+              <DetailBlock label="Script" text={selected.script} accent="#c9a000"
+                onCopy={() => copyField('script', selected.script)} copied={copied === 'script'} />
+            )}
+            {selected.script && (
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--text3)', marginBottom: 4 }}>Caption</div>
+            )}
             <div style={{
               fontSize: 13, color: 'var(--text2)', lineHeight: 1.75,
               padding: '12px 14px', background: 'var(--bg2)', borderRadius: 8,
               whiteSpace: 'pre-line', marginBottom: 10
             }}>{selected.copy}</div>
+            {selected.firstComment && (
+              <DetailBlock label="First comment" text={selected.firstComment}
+                onCopy={() => copyField('firstComment', selected.firstComment)} copied={copied === 'firstComment'} />
+            )}
+            {selected.notes && <DetailBlock label="Notes" text={selected.notes} />}
+            {Array.isArray(selected.assets) && selected.assets.length > 0 && (
+              <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 10 }}>
+                Assets: {selected.assets.join(', ')}
+              </div>
+            )}
             {selected.sentiment && (
               <div style={{ fontSize: 12, color: 'var(--text3)', fontStyle: 'italic' }}>
                 Timing: {SENTIMENT_TYPES[selected.sentiment]?.timing}
@@ -251,10 +315,17 @@ export default function Calendar() {
                         key={post.id || i}
                         className={`post-card brand-${post.brand}`}
                         onClick={() => setSelected(post)}
-                        style={{ marginBottom: i < posts.length - 1 ? 6 : 0 }}
+                        style={{
+                          marginBottom: i < posts.length - 1 ? 6 : 0,
+                          // EMAIL sends keep their own tint whatever the brand, so a Kit send
+                          // never reads as one more LinkedIn post in the week.
+                          ...(labelColors(post.channelLabel) ? { background: labelColors(post.channelLabel).light, borderColor: labelColors(post.channelLabel).border } : {}),
+                        }}
                       >
-                        <div className={`post-card-brand brand-${post.brand}`}>
+                        <div className={`post-card-brand brand-${post.brand}`}
+                          style={labelColors(post.channelLabel) ? { color: labelColors(post.channelLabel).text } : undefined}>
                           {post.channelLabel || (post.brand === 'mylua' ? 'MYLÚA' : (post.brand || '').toUpperCase())}
+                          {post.kind === 'camera' && <CameraChip style={{ marginLeft: 6, fontSize: 9, padding: '1px 5px' }} />}
                         </div>
                         <div className="post-card-title">{post.title}</div>
                         <div className="post-card-type">

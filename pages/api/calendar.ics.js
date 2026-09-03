@@ -85,10 +85,17 @@ export default async function handler(req, res) {
 
     // The copy rides in the event body, so the reminder itself is postable —
     // no need to open anything if he just wants to paste and go.
+    // Camera posts put the on-camera script FIRST: he films before he captions,
+    // and the phone reminder is the only thing open on set. esc() below handles
+    // RFC 5545 (\n, commas, semicolons, backslashes) for the whole body at once.
+    const camera = p.kind === 'camera' || Boolean(p.script);
     const body = [
+      ...(p.script ? ['🎥 ON CAMERA · SAY THIS:', p.script, '', 'CAPTION:'] : []),
       p.copy || '',
+      ...(p.firstComment ? ['', 'FIRST COMMENT:', p.firstComment] : []),
+      ...(p.notes ? ['', 'NOTES:', p.notes] : []),
       '',
-      `— ${p.channelLabel || ''}${p.type ? ` · ${p.type}` : ''}`,
+      `— ${p.channelLabel || ''}${p.type ? ` · ${p.type}` : ''}${camera ? ' · camera' : ''}`,
       '',
       'After posting: check in at +15, +45 and +90 minutes. Reply to every comment,',
       'ask something back where it fits. Comments are worth 8-15x a like, and the',

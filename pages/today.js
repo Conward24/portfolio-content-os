@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
-import { BRANDS } from '../lib/constants';
+import { BRANDS, labelColors } from '../lib/constants';
 
 // Phone posting screen. One job: standing in a queue, know what to post,
 // copy it, grab the asset, mark it done. Everything else is noise.
@@ -269,8 +269,10 @@ export default function Today() {
                 const done = Boolean(posted[p.id]);
                 const assets = matchAssets(p, photos);
                 const isOpen = open === p.id;
-                const badge = BADGE[p.brand] || { bg: 'var(--text3)', fg: '#fff' };
+                // EMAIL (a Kit send) keeps its own colour whatever the brand; everything else is brand-coloured.
+                const badge = labelColors(p.channelLabel) || BADGE[p.brand] || { bg: 'var(--text3)', fg: '#fff' };
                 const hasVideo = assets.some(a => /\.mp4$/i.test(a.name));
+                const isCamera = p.kind === 'camera' || Boolean(p.script);
 
                 return (
                   <article
@@ -309,9 +311,17 @@ export default function Today() {
                         >
                           {p.title}
                         </div>
-                        <div style={{ fontSize: 11.5, color: 'var(--text3)', marginTop: 3 }}>
-                          {niceTime(p.time)}
-                          {assets.length > 0 && ` · ${assets.length} ${hasVideo ? 'video' : 'image'}${assets.length > 1 ? 's' : ''}`}
+                        <div style={{ fontSize: 11.5, color: 'var(--text3)', marginTop: 3, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                          <span>
+                            {niceTime(p.time)}
+                            {assets.length > 0 && ` · ${assets.length} ${hasVideo ? 'video' : 'image'}${assets.length > 1 ? 's' : ''}`}
+                          </span>
+                          {isCamera && (
+                            <span style={{
+                              fontSize: 9.5, fontWeight: 700, letterSpacing: '.04em', padding: '2px 6px', borderRadius: 4,
+                              background: '#FFF4D6', color: '#7A5A00', border: '0.5px solid #F0D48A',
+                            }}>🎥 camera</span>
+                          )}
                         </div>
                       </div>
                       <span style={{ color: 'var(--text3)', fontSize: 12, flex: '0 0 auto', marginTop: 3 }}>
@@ -344,6 +354,38 @@ export default function Today() {
 
                     {isOpen && (
                       <div style={{ padding: '0 14px 14px' }}>
+                        {/* Script first: he films before he captions. */}
+                        {p.script && (
+                          <div style={{ marginBottom: 10 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 }}>
+                              <span style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.09em', color: '#7A5A00' }}>🎥 ON CAMERA · SAY THIS</span>
+                              <button
+                                className="btn"
+                                onClick={() => copy(p.script, `${p.id}:script`)}
+                                style={{ padding: '6px 12px', fontSize: 12, fontWeight: 600 }}
+                              >
+                                {copied === `${p.id}:script` ? 'Copied ✓' : 'Copy script'}
+                              </button>
+                            </div>
+                            <div
+                              style={{
+                                fontSize: 15,
+                                lineHeight: 1.7,
+                                whiteSpace: 'pre-line',
+                                background: '#FFFBEA',
+                                border: '1px solid #F0D48A',
+                                borderLeft: '4px solid #FFCC00',
+                                borderRadius: 8,
+                                padding: '12px 13px',
+                              }}
+                            >
+                              {p.script}
+                            </div>
+                          </div>
+                        )}
+                        {p.script && p.copy && (
+                          <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.09em', color: 'var(--text3)', marginBottom: 5 }}>CAPTION</div>
+                        )}
                         {p.copy && (
                           <div
                             style={{
@@ -356,6 +398,29 @@ export default function Today() {
                             }}
                           >
                             {p.copy}
+                          </div>
+                        )}
+                        {p.firstComment && (
+                          <div style={{ marginTop: 10 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 }}>
+                              <span style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.09em', color: 'var(--text3)' }}>FIRST COMMENT</span>
+                              <button
+                                className="btn"
+                                onClick={() => copy(p.firstComment, `${p.id}:firstComment`)}
+                                style={{ padding: '6px 12px', fontSize: 12, fontWeight: 600 }}
+                              >
+                                {copied === `${p.id}:firstComment` ? 'Copied ✓' : 'Copy'}
+                              </button>
+                            </div>
+                            <div style={{ fontSize: 13.5, lineHeight: 1.6, whiteSpace: 'pre-line', background: 'var(--bg2)', borderRadius: 8, padding: '10px 13px' }}>
+                              {p.firstComment}
+                            </div>
+                          </div>
+                        )}
+                        {p.notes && (
+                          <div style={{ marginTop: 10, fontSize: 12.5, lineHeight: 1.55, color: 'var(--text2)', whiteSpace: 'pre-line' }}>
+                            <span style={{ fontWeight: 700, color: 'var(--text3)', letterSpacing: '.06em', fontSize: 10.5 }}>NOTES · </span>
+                            {p.notes}
                           </div>
                         )}
 
