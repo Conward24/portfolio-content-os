@@ -208,11 +208,11 @@ export default function Calendar() {
                 <span className={`brand-badge badge-${selected.brand}`}>{BRANDS[selected.brand]?.name}</span>
                 {selected.channelLabel && (() => {
                   const lc = labelColors(selected.channelLabel);
-                  return (
+                  return (<>
                     <span style={{
                       fontSize: 10, fontWeight: 800, letterSpacing: '.06em', padding: '3px 7px', borderRadius: 4,
                       background: lc ? lc.bg : 'var(--bg3)', color: lc ? lc.fg : 'var(--text2)',
-                    }}>{selected.channelLabel}</span>
+                    }}>{selected.channelLabel}</span>{selected.channel ? <span style={{ marginLeft: 8, fontSize: 12, color: 'var(--text3)' }}>{selected.channel}</span> : null}</>
                   );
                 })()}
                 {selected.kind === 'camera' && <CameraChip />}

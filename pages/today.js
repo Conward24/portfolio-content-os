@@ -300,6 +300,11 @@ export default function Today() {
                       >
                         {p.channelLabel}
                       </span>
+                      {p.channel ? (
+                        <span style={{ fontSize: 11, color: 'var(--text3)', flex: '0 0 auto', marginTop: 2, maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {p.channel}
+                        </span>
+                      ) : null}
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div
                           style={{
