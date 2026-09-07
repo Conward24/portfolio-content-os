@@ -413,6 +413,11 @@ async function currentSchedule() {
   }
 }
 
+// Opus with thinking on and an 8000-token ceiling routinely runs past the
+// default function limit, and a timed-out request looked to Michael like the
+// advisor "forgetting". Five minutes is the Fluid Compute ceiling on this plan.
+export const config = { maxDuration: 300, api: { bodyParser: { sizeLimit: '8mb' } } };
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
 

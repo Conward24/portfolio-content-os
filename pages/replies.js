@@ -26,8 +26,31 @@ export default function Replies() {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState('');
   const [copied, setCopied] = useState(null);
+  // What was drafted before: for the selected post (the thread's memory) and
+  // overall (so a result survives leaving this page). Kept in Redis by /api/reply.
+  const [priorOnPost, setPriorOnPost] = useState([]);
+  const [recent, setRecent] = useState([]);
+  const [showRecent, setShowRecent] = useState(false);
   const boxRef = useRef(null);
   const fileRef = useRef(null);
+
+  useEffect(() => {
+    fetch('/api/reply-log?limit=20').then(r => r.json()).then(d => setRecent(d.entries || [])).catch(() => {});
+  }, [result]);
+
+  useEffect(() => {
+    if (!postId) { setPriorOnPost([]); return; }
+    fetch(`/api/reply-log?postId=${encodeURIComponent(postId)}&limit=10`)
+      .then(r => r.json()).then(d => setPriorOnPost(d.entries || [])).catch(() => {});
+  }, [postId, result]);
+
+  function reopen(e) {
+    setBrand(e.brand); setPlatform(e.platform); setPostId(e.postId || '');
+    setComment(e.hadImage ? '' : e.comment);
+    setResult({ ...e, post: e.postTitle ? { title: e.postTitle } : null });
+    setShowRecent(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
 
   // Recent + upcoming posts, so a comment can be tied to what it's replying to.
   useEffect(() => {
@@ -240,6 +263,26 @@ export default function Replies() {
           {err && <span style={{ fontSize: 12, color: '#A32D2D', marginLeft: 12 }}>{err}</span>}
         </div>
 
+        {priorOnPost.length > 0 && (
+          <div className="card mb-16" style={{ borderLeft: '3px solid #c9a000' }}>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--text3)', marginBottom: 8 }}>
+              Earlier on this post · {priorOnPost.length}
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 8 }}>
+              The next draft is written knowing these were already said.
+            </div>
+            {priorOnPost.map(e => (
+              <div key={e.id} style={{ padding: '8px 0', borderTop: '0.5px solid var(--border)', fontSize: 13, lineHeight: 1.6 }}>
+                <div style={{ color: 'var(--text2)' }}>“{e.comment.slice(0, 160)}{e.comment.length > 160 ? '…' : ''}”</div>
+                <div style={{ color: 'var(--text3)', fontSize: 12, marginTop: 2 }}>
+                  → {e.replies?.[0]?.text?.slice(0, 140) || '(no reply)'}{(e.replies?.[0]?.text || '').length > 140 ? '…' : ''}
+                  <button className="btn" onClick={() => reopen(e)} style={{ fontSize: 11, padding: '2px 8px', marginLeft: 8 }}>Open</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
         {result && (
           <>
             <div className="card mb-16">
@@ -316,6 +359,23 @@ export default function Replies() {
               </div>
             )}
           </>
+        )}
+
+        {recent.length > 0 && (
+          <div className="card mb-16">
+            <button onClick={() => setShowRecent(o => !o)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, fontWeight: 600, color: 'var(--text2)' }}>
+              {showRecent ? '▾' : '▸'} Recent replies · {recent.length}
+            </button>
+            {showRecent && recent.map(e => (
+              <div key={e.id} style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '8px 0', borderTop: '0.5px solid var(--border)', fontSize: 12.5 }}>
+                <span style={{ color: 'var(--text3)', flexShrink: 0 }}>{new Date(e.ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                <span style={{ flex: 1, color: 'var(--text2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {e.postTitle ? `${e.postTitle.slice(0, 36)} · ` : ''}{e.comment.slice(0, 90)}
+                </span>
+                <button className="btn" onClick={() => reopen(e)} style={{ fontSize: 11, padding: '2px 8px' }}>Open</button>
+              </div>
+            ))}
+          </div>
         )}
       </div>
     </Layout>

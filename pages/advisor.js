@@ -152,6 +152,11 @@ export default function Advisor() {
   const [showSuggestions, setShowSuggestions] = useState(true);
   const [pendingImage, setPendingImage] = useState(null); // { base64, preview, mediaType }
   const [dragOver, setDragOver] = useState(false);
+  // Conversations are kept in Redis (see /api/advisor-threads). This tab holds
+  // the id of the one on screen; the list is what the "Conversations" panel shows.
+  const [threadId, setThreadId] = useState(null);
+  const [threads, setThreads] = useState([]);
+  const [threadsOpen, setThreadsOpen] = useState(false);
   const bottomRef = useRef();
   const textareaRef = useRef();
   const fileInputRef = useRef();
@@ -159,6 +164,57 @@ export default function Advisor() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
+
+  // On open: list the saved conversations and pick up where this device left off.
+  useEffect(() => {
+    refreshThreads();
+    let last = null;
+    try { last = localStorage.getItem('advisor:thread'); } catch { /* ignore */ }
+    if (last) loadThread(last);
+  }, []);
+
+  async function refreshThreads() {
+    try {
+      const r = await fetch('/api/advisor-threads');
+      const d = await r.json();
+      setThreads(d.threads || []);
+    } catch { /* offline: the list just stays as it was */ }
+  }
+
+  async function loadThread(id) {
+    try {
+      const r = await fetch(`/api/advisor-threads?id=${encodeURIComponent(id)}`);
+      if (!r.ok) { try { localStorage.removeItem('advisor:thread'); } catch { /* ignore */ } return; }
+      const t = await r.json();
+      setMessages(t.messages || []);
+      setApiMessages(t.apiMessages || []);
+      setThreadId(t.id);
+      setShowSuggestions(false);
+      setThreadsOpen(false);
+      try { localStorage.setItem('advisor:thread', t.id); } catch { /* ignore */ }
+    } catch { /* leave the screen as it is */ }
+  }
+
+  // Saved after the question goes out AND after the answer lands, so a request
+  // that times out does not take the question with it.
+  async function saveThread(id, display, api) {
+    try {
+      await fetch('/api/advisor-threads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, messages: display, apiMessages: api }),
+      });
+      refreshThreads();
+    } catch { /* a failed save is not worth interrupting the conversation for */ }
+  }
+
+  async function deleteThread(id) {
+    try {
+      await fetch('/api/advisor-threads', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
+    } catch { /* ignore */ }
+    if (id === threadId) reset();
+    refreshThreads();
+  }
 
   async function handleImageFile(file) {
     if (!file || !file.type.startsWith('image/')) return;
@@ -217,6 +273,13 @@ export default function Advisor() {
     setApiMessages(newApiMessages);
     setLoading(true);
 
+    const id = threadId || `t-${Date.now()}`;
+    if (!threadId) {
+      setThreadId(id);
+      try { localStorage.setItem('advisor:thread', id); } catch { /* ignore */ }
+    }
+    saveThread(id, newDisplayMessages, newApiMessages);
+
     try {
       const res = await fetch('/api/advisor', {
         method: 'POST',
@@ -224,15 +287,18 @@ export default function Advisor() {
         body: JSON.stringify({ messages: newApiMessages }),
       });
       const data = await res.json();
-      const replyText = data.reply || 'Something went wrong.';
+      const replyText = data.reply || (data.error ? `The advisor hit an error: ${data.details || data.error}` : 'Something went wrong.');
       const replyMsg = { role: 'assistant', content: replyText };
       // Proposed calendar changes ride alongside the text. They are not applied
       // until he taps Apply — see CALENDAR_TOOLS in the API route.
-      setMessages(prev => [...prev, { role: 'assistant', content: replyText, actions: data.actions || [] }]);
+      const shown = { role: 'assistant', content: replyText, actions: data.actions || [] };
+      setMessages(prev => [...prev, shown]);
       setApiMessages(prev => [...prev, replyMsg]);
+      saveThread(id, [...newDisplayMessages, shown], [...newApiMessages, replyMsg]);
     } catch (e) {
-      setMessages(prev => [...prev, { role: 'assistant', content: 'Connection error. Check your API key.' }]);
-      setApiMessages(prev => [...prev, { role: 'assistant', content: 'Connection error.' }]);
+      // The question is already saved above; only the answer is missing.
+      const note = { role: 'assistant', content: 'That one did not come back (the connection dropped or the request ran too long). Your question is saved in this conversation; send it again.' };
+      setMessages(prev => [...prev, note]);
     }
     setLoading(false);
   }
@@ -250,6 +316,9 @@ export default function Advisor() {
     setShowSuggestions(true);
     setInput('');
     setPendingImage(null);
+    setThreadId(null);
+    setThreadsOpen(false);
+    try { localStorage.removeItem('advisor:thread'); } catch { /* ignore */ }
   }
 
   function handleDrop(e) {
@@ -288,12 +357,41 @@ export default function Advisor() {
             </div>
           </div>
         </div>
-        {messages.length > 0 && (
-          <button className="btn" onClick={reset} style={{ fontSize: 12, padding: '5px 12px' }}>
-            New conversation
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className="btn" onClick={() => setThreadsOpen(o => !o)} style={{ fontSize: 12, padding: '5px 12px' }}>
+            Conversations{threads.length ? ` (${threads.length})` : ''}
           </button>
-        )}
+          {messages.length > 0 && (
+            <button className="btn" onClick={reset} style={{ fontSize: 12, padding: '5px 12px' }}>
+              New conversation
+            </button>
+          )}
+        </div>
       </div>
+
+      {threadsOpen && (
+        <div style={{ padding: '10px 28px', borderBottom: '0.5px solid var(--border2)', background: 'var(--bg2)', maxHeight: 260, overflowY: 'auto' }}>
+          <div style={{ maxWidth: 680, margin: '0 auto' }}>
+            {threads.length === 0 && (
+              <div style={{ fontSize: 12, color: 'var(--text3)' }}>Nothing saved yet. Every conversation from here on is kept.</div>
+            )}
+            {threads.map(t => (
+              <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 0', borderBottom: '0.5px solid var(--border)' }}>
+                <button onClick={() => loadThread(t.id)} style={{
+                  flex: 1, textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                  fontSize: 13, color: t.id === threadId ? 'var(--text)' : 'var(--text2)', fontWeight: t.id === threadId ? 600 : 400, padding: 0,
+                }}>
+                  {t.title}
+                  <span style={{ fontSize: 11, color: 'var(--text3)', marginLeft: 8 }}>
+                    {new Date(t.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} · {t.turns} turns
+                  </span>
+                </button>
+                <button onClick={() => deleteThread(t.id)} title="Delete" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)', fontSize: 15, fontFamily: 'inherit' }}>×</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div
         style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 57px)' }}

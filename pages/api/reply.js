@@ -21,7 +21,10 @@ const client = new Anthropic();
 
 // Next's default body limit is 1mb, which a phone screenshot clears instantly.
 // The client downscales before sending, so this is only a safety net.
-export const config = { api: { bodyParser: { sizeLimit: '8mb' } } };
+export const config = { maxDuration: 300, api: { bodyParser: { sizeLimit: '8mb' } } };
+
+const LOG_KEY = 'portfolio:replies:log';
+const LOG_MAX = 300;
 
 const CALENDAR_KEY = 'portfolio:calendar:posts';
 
@@ -89,7 +92,7 @@ function extractJson(text) {
   }
 }
 
-function systemPrompt(brand, platform, post) {
+function systemPrompt(brand, platform, post, prior = []) {
   const b = BRANDS[brand];
   // A reply on his own profile has to sound like him, not like the company
   // page. Those are different voices and they disagree on em dashes.
@@ -112,6 +115,12 @@ ${post.copy}
 Reply as though you remember writing this. You may reference a specific line from it. Do NOT
 restate it back at the commenter.` : `## The post
 Not supplied. Write a reply that stands on its own and do not invent what the post said.`}
+${prior.length ? `
+## Earlier on this same thread
+These comments already came in on this post and this is what Michael replied (or was given to
+reply). Treat them as context he remembers: do not repeat a point he already made, and if this
+new comment is from the same person, continue the conversation rather than restarting it.
+${prior.map((e, i) => `${i + 1}. Comment: ${e.comment}\n   Reply used: ${e.replies?.[0]?.text || '(none)'}`).join('\n')}` : ''}
 
 ## How to write these
 Reply as Michael, first person. A comment is a person, not a lead-gen event — the reply that earns
@@ -170,11 +179,16 @@ export default async function handler(req, res) {
     content.push({ type: 'text', text: `The comment:\n\n${comment}` });
   }
 
+  // What was already said on this post, newest first, so the thread has a memory.
+  let log = [];
+  try { log = (await redis.get(LOG_KEY)) || []; } catch (e) { console.error('[reply] log read failed', e); }
+  const prior = postId ? log.filter(e => e.postId === postId).slice(0, 6).reverse() : [];
+
   try {
     const response = await client.messages.create({
       model: 'claude-opus-5',
       max_tokens: 8000,
-      system: systemPrompt(brand, platform, post),
+      system: systemPrompt(brand, platform, post, prior),
       messages: [{ role: 'user', content }],
     });
 
@@ -191,10 +205,26 @@ export default async function handler(req, res) {
       return res.status(200).json({ error: 'Got a reply back but could not read it. Try again.' });
     }
 
-    return res.status(200).json({
+    const out = {
       ...parsed,
       post: post ? { title: post.title, date: post.date, channelLabel: post.channelLabel } : null,
-    });
+    };
+
+    // Keep it. The screenshot is not stored; the comment text (or a note that it
+    // came as a screenshot) and every drafted option are.
+    try {
+      const entry = {
+        id: `r-${Date.now()}`, ts: new Date().toISOString(), brand, platform,
+        postId: postId || null, postTitle: post?.title || null,
+        comment: comment || '(from a screenshot)', hadImage: !!image,
+        priority: parsed.priority, intent: parsed.intent, read: parsed.read, caution: parsed.caution || null,
+        replies: parsed.replies, dm: parsed.dm || null,
+      };
+      await redis.set(LOG_KEY, [entry, ...log].slice(0, LOG_MAX));
+      out.id = entry.id;
+    } catch (e) { console.error('[reply] log write failed', e); }
+
+    return res.status(200).json(out);
   } catch (err) {
     console.error('[reply] draft failed', err);
     return res.status(500).json({ error: 'Could not draft a reply', details: err.message });
