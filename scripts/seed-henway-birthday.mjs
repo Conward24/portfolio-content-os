@@ -345,8 +345,13 @@ const kept = current.filter(p => !removedIds.includes(p.id));
 // Same ordering as pages/api/calendar.js POST: newest first.
 await transport.writeCalendar([...clean, ...kept], { removedIds, added: clean });
 
+// A post REPLACED under the same id keeps its posted tick. Replacing is a
+// delete + POST at the API, and this used to untick everything deleted, so
+// re-seeding a caption on a post already published (or any post in the same
+// file, on a --wipe-tag run) silently un-posted it on the Today page. Only an
+// id that leaves the calendar for good loses its tick.
 const postedNext = { ...posted };
-const untick = removedIds.filter(id => postedNext[id]);
+const untick = removedIds.filter(id => postedNext[id] && !newIds.has(id));
 for (const id of untick) delete postedNext[id];
 if (untick.length) await transport.writePosted(postedNext, { removedIds: untick });
 
