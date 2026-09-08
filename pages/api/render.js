@@ -11,15 +11,20 @@ export const config = { api: { bodyParser: { sizeLimit: '2mb' } } };
 // Which logo (bg-matched, transparent) each brand/template uses. Only
 // brands with explicit light/dark logo files use a real logo; others
 // render a clean wordmark — never a knocked-out or broken image.
-function logoUrlFor(brand, template, t) {
+function logoUrlFor(brand, template, t, data = {}) {
   if (brand === 'mylua') {
     // Black logomark on cream cards; dark teal "announce" → cream wordmark.
     return template === 'announce' ? null : t.logoUrl;
   }
   if (brand === 'henway') {
-    // Only a black logo exists → use it on the light "quote" card; the
-    // dark cards fall back to the yellow wordmark.
-    return template === 'quote' ? t.logoBlackUrl : null;
+    // Real wordmark+egg lockup on EVERY card, background-matched:
+    //   quote = white bg → black lockup
+    //   stat / signal = black bg → white lockup (egg stays yellow)
+    //   carousel = per-slide: data.dark (default true) picks white, else black
+    // Set data.logoStyle = 'yellow' on a dark card for the bolder all-yellow lockup.
+    if (template === 'quote' || template === 'chick') return t.logoBlackUrl; // white bg
+    if (template === 'carousel') return data.dark === false ? t.logoBlackUrl : t.logoWhiteUrl;
+    return data.logoStyle === 'yellow' ? t.logoYellowUrl : t.logoWhiteUrl; // stat, signal (dark)
   }
   if (brand === 'blabbing') {
     return t.logoDarkUrl; // all blabbing cards are dark bg → white logo
@@ -38,9 +43,11 @@ export default async function handler(req, res) {
 
   try {
     // Resolve brand assets server-side into data URIs (no CORS issues).
-    const [logoDataUri, photoDataUri] = await Promise.all([
-      fetchAsDataUri(logoUrlFor(brand, template, t)),
+    const mascotUrl = data.mascot && t.mascots ? t.mascots[data.mascot] : null;
+    const [logoDataUri, photoDataUri, mascotDataUri] = await Promise.all([
+      fetchAsDataUri(logoUrlFor(brand, template, t, data)),
       brand === 'mike' ? fetchAsDataUri(t.photoUrl) : Promise.resolve(null),
+      fetchAsDataUri(mascotUrl),
     ]);
 
     const element = renderTemplate({
@@ -48,7 +55,7 @@ export default async function handler(req, res) {
       template,
       width: size.w,
       height: size.h,
-      data: { ...data, logoDataUri, photoDataUri },
+      data: { ...data, logoDataUri, photoDataUri, mascotDataUri },
     });
 
     const image = new ImageResponse(element, {

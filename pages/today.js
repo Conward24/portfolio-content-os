@@ -408,7 +408,7 @@ export default function Today() {
                         {p.firstComment && (
                           <div style={{ marginTop: 10 }}>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 }}>
-                              <span style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.09em', color: 'var(--text3)' }}>FIRST COMMENT</span>
+                              <span style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.09em', color: 'var(--text3)' }}>{p.channelLabel === 'COMPANY' ? 'YOUR COMMENT, FROM YOUR PERSONAL PROFILE, WITHIN THE HOUR' : 'FIRST COMMENT'}</span>
                               <button
                                 className="btn"
                                 onClick={() => copy(p.firstComment, `${p.id}:firstComment`)}

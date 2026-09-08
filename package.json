@@ -5,7 +5,9 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "video:themes": "node -e \"import('./lib/video/brandVideo.js').then(m=>['henway','mylua','blabbing'].forEach(b=>console.log(m.describeTheme(b)+'\\n')))\"",
+    "video:render": "node scripts/render-video.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.20.0",

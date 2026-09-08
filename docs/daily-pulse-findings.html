@@ -153,6 +153,20 @@
     .standfirst { font-size:18px; }
     .claim { font-size:21px; }
   }
+
+  /* ── the lead finding ── */
+  .lead-finding { border:2px solid var(--indigo); background:var(--indigo-soft); padding:26px 26px 22px; margin:0 0 40px; }
+  .lead-finding .kicker { color:var(--indigo-deep); }
+  .lead-finding h2 { margin:6px 0 12px; }
+  .lead-finding p { color:var(--ink-2); }
+  .lead-finding p.punch { font-family:var(--display); font-size:19px; line-height:1.45; color:var(--ink); font-weight:600; margin:18px 0 0; }
+  table.gap { min-width:440px; margin:20px 0 6px; }
+  table.gap thead th { border-bottom:1px solid var(--indigo); color:var(--indigo-deep); }
+  table.gap td { border-bottom:1px solid var(--rule); padding:13px 16px 13px 0; }
+  table.gap td.co { font-weight:600; color:var(--ink); width:30%; }
+  table.gap td.dt { font-family:var(--mono); font-size:13px; font-variant-numeric:tabular-nums; width:23%; }
+  table.gap td.lag { font-family:var(--mono); font-size:13.5px; font-weight:600; color:var(--indigo-deep); width:24%; }
+  .caveat { font-size:14px; color:var(--ink-3); border-left:2px solid var(--rule-strong); padding-left:14px; margin:18px 0 0; }
 </style>
 
 <div class="wrap">
@@ -160,17 +174,68 @@
 <header>
   <p class="eyebrow">Findings from the pilot feed</p>
   <h1>Why the Daily Pulse reads the same every day</h1>
-  <p class="standfirst">The daily retrieval is running fine. The problem is what it brings back — and three changes in the query layer fix it.</p>
+  <p class="standfirst">The retrieval runs fine and the ranking does what it was told: sort by top topics, not by recency. That is why the feed trails the news by two to thirteen days, and why the real question is which product this is.</p>
   <div class="meta">
     <span>Prepared for Jelani</span>
+    <span>Updated Aug 17 after the call</span>
     <span>410 pulses · 10 topics · 40 days</span>
     <span>Jun 24 – Aug 10, 2026</span>
   </div>
 </header>
 
+<section class="lead-finding">
+  <p class="kicker">The headline finding</p>
+  <h2>The pulse trails the news by two to thirteen days</h2>
+  <p>The archive names very few specific companies, but where it does we can check it directly: find when the round actually became public, and compare that to the day the pulse first mentioned it. No inference needed.</p>
+
+  <div class="scroller">
+    <table class="gap">
+      <thead>
+        <tr><th>Company</th><th>Public coverage</th><th>First in the pulse</th><th>Gap</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="co">CARPL.ai<br><span style="font-weight:400;font-size:13px;color:var(--ink-3)">$10M Series A</span></td>
+          <td class="dt">Jul 23–24</td>
+          <td class="dt">Jul 29</td>
+          <td class="lag">5–6 days late</td>
+        </tr>
+        <tr>
+          <td class="co">Consint.AI<br><span style="font-weight:400;font-size:13px;color:var(--ink-3)">₹22 Cr Series A</span></td>
+          <td class="dt">Aug 6, 11:18 IST</td>
+          <td class="dt">Aug 8</td>
+          <td class="lag">2 days late</td>
+        </tr>
+        <tr>
+          <td class="co">Bunkerhill Health<br><span style="font-weight:400;font-size:13px;color:var(--ink-3)">$25M Series B</span></td>
+          <td class="dt">Jul 16</td>
+          <td class="dt">Jul 29</td>
+          <td class="lag">13 days late</td>
+        </tr>
+        <tr>
+          <td class="co">Corner Health<br><span style="font-weight:400;font-size:13px;color:var(--ink-3)">$32.5M</span></td>
+          <td class="dt">Jul</td>
+          <td class="dt">never</td>
+          <td class="lag">not covered</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>Entrackr broke Consint.AI on the morning of August 6th; the pulse named it on the 8th. CARPL.ai was covered across nine outlets from July 23rd and reached the pulse on the 29th. Bunkerhill Health, the largest of the three at $25M led by Khosla, was public on July 16th and took thirteen days.</p><p><strong>Bunkerhill and CARPL surfaced on the same day.</strong> Two rounds a week apart in the real world arrived together on July 29th, which is the trending mechanic visible in the data: they crossed into top-topic status at the same moment rather than when each broke.</p>
+
+  <p class="punch">This is the number that decides what can be built. An early-warning product promises a 24 to 48 hour lead. The feed runs a two to thirteen day lag, in the opposite direction.</p>
+
+  <p style="margin-top:18px"><strong>And that is on purpose.</strong> Jelani pulled up the prompt on 17 August. It reads: <em>"Identify the most relevant and recent information prioritized in the last 30 days when available."</em> It sorts by <strong>top topics</strong> across a 30-day window, not by recency. It is answering "what is being talked about right now," not "what happened yesterday."</p>
+
+  <p>So the lag is not retrieval failing to prefer fresh material. <strong>The lag is the definition of trending.</strong> Something breaks, and days or weeks later it becomes one of the most-discussed things in its topic. The tool is measuring when an event becomes a conversation, which is a real and different thing from when it happened.</p>
+
+  <p class="caveat"><strong>n = 2, and that is itself a finding.</strong> Four checkable cases in forty days of pulses on the topic explicitly about tracking Series A and B rounds, and one of the four was never covered at all. Every case points the same way, and they agree with every other measurement below.</p>
+</section>
+
 <section>
   <p class="kicker">The short version</p>
-  <p class="lede">Every pulse since June 24 has been archived, so we were able to test the feed instead of guessing about it. What the archive shows is that each morning's search returns the best general explanation of the topic rather than what happened yesterday — because "most relevant" means exactly that when the search has no sense of time. Your index is fine and the fresh material is in it. It's losing the ranking.</p>
+  <p class="lede">Every pulse since June 24 has been archived, so we were able to test the feed instead of guessing about it. Each morning's search returns the best general account of the topic rather than what happened yesterday, and measured against public coverage the feed lands two to thirteen days behind. On the 17th Jelani found the cause in the prompt: it ranks by top topics over a 30-day window. Nothing is broken. What we have is a trend detector, and the decision in front of us is whether that is the product we want.</p>
 </section>
 
 <section>
@@ -212,7 +277,7 @@
         <tr class="control">
           <td class="check">What about a topic with genuine ongoing news?</td>
           <td class="found">Behaves<br>correctly</td>
-          <td class="means">AI healthcare regulation is the exception on every measure — its emotion scores <em>do</em> hold steady day to day, and its sentiment moves more than any other topic. When there's real fresh material, the engine picks it up properly. The plumbing works.</td>
+          <td class="means">Fresh, named events <em>do</em> get through — CARPL.ai and Consint.AI both reached the pulse eventually, and AI healthcare regulation holds steadier day to day than any other topic. The retrieval and the index are working. What is missing is any preference for what arrived most recently, which is why the same material shows up days after it was news.</td>
         </tr>
       </tbody>
     </table>
@@ -233,11 +298,35 @@
   </figure>
 </section>
 
+
+<section>
+  <p class="kicker">Two gaps found by hand-checking, 17 August</p>
+  <h2>The investor layer is missing entirely</h2>
+  <p>The pulse covered Bunkerhill Health's Series B. It never said who led it.</p>
+  <p><strong>Khosla Ventures, Sequoia and Optum Ventures appear nowhere in all 410 pulses.</strong> Not once, across every topic, in the whole archive. Khosla led that round; Sequoia, Felicis, Optum Ventures and Y Combinator were all in it, and none of them are named anywhere.</p>
+  <p>On a topic called <em>tracking venture capital funding and Series A/B investment trends</em>, who is writing the cheques is the signal. The company name is only the headline. This looks like a line in the prompt rather than anything structural.</p>
+
+  <h2 style="margin-top:34px">Emotion scores only exist for fourteen days</h2>
+  <p>Every pulse before 27 July carries <code style="font-family:var(--mono);font-size:13px">sentiment: null</code> and all-zero emotions. So the emotion history is 14 to 15 days per topic, not 40, and any scoring built on it has far less to stand on than the archive size suggests. Worth confirming whether that start date was intended.</p>
+  <p>It also sets a trap for anyone measuring stability. Run the day-to-day correlation across all forty days and you get <strong>0.512</strong>, which reads as "these scores are stable." That is an artifact: twenty-six identical zeros in a row are perfectly correlated with themselves. Run it only on days that carry data and it is <strong>&minus;0.012</strong>, statistically indistinguishable from noise.</p>
+  <p>One topic is a real exception on the corrected figure. <strong>AI healthcare regulation holds at 0.521</strong>, the only one of ten clearly above zero.</p>
+</section>
+
+<section>
+  <p class="kicker">What the day-to-day change actually consists of</p>
+  <h2>About 39% of the words are new each day, and almost none of them mean anything</h2>
+  <p>Printing them settles it. A representative day's new vocabulary against the prior week:</p>
+  <p style="font-family:var(--mono);font-size:13.5px;color:var(--ink-2);background:var(--surface-2);border:1px solid var(--rule);padding:14px 16px;max-width:none">administrative, confidence, considerably, drive, efficiency, innovation, looking, potential, premiums, reflecting, stages, startup</p>
+  <p>That is the same account of the same subject, rewritten. It is also why the emotion scores jitter: they are a deterministic function of text that gets reworded every morning, so they end up measuring the paraphrase rather than the mood.</p>
+  <p>Some days are genuinely different. 31 July brought <em>assured</em>, <em>isomorphic</em>, <em>labs</em> — real companies, real events. Those are the days worth detecting, and they are a small minority.</p>
+</section>
+
 <section>
   <p class="kicker">Why this happens</p>
-  <h2>Relevance and recency are pulling in opposite directions</h2>
-  <p>Search a broad topic like "Medicaid reimbursement for doula services" and the best match by relevance will almost always be a thorough, well-written overview. It covers the whole subject, so it scores highest against the query. Yesterday's news story covers one narrow development, so it scores lower — even though it's the only thing that's actually new.</p>
-  <p>Run that same search every morning and the same overview comes back, worded a little differently each time. <strong>The process runs daily. The result doesn't change daily.</strong></p>
+  <h2>Top-topic ranking beats recency, because that is what it was told to do</h2>
+  <p>Ask for the most-discussed items in a 30-day window and the winner is almost always a thorough overview of the subject. It matches the whole query. Yesterday's narrow development matches one corner of it, so it ranks lower until enough other coverage accumulates behind it to make it a top topic in its own right.</p>
+  <p>Run that same search every morning and the same overview comes back, worded a little differently each time. <strong>The process runs daily. The result doesn't change daily</strong> — until the underlying conversation does, which is exactly the two-to-six-day lag.</p>
+  <p>In Jelani's framing on the call: this is sorting by top topics, the way you would sort a feed by "top" rather than "recent." Both are legitimate sorts. They are just different products.</p>
 </section>
 
 <section>
@@ -248,20 +337,25 @@
 </section>
 
 <section>
-  <p class="kicker">The fix</p>
-  <h2>Three changes, all in the query layer</h2>
+  <p class="kicker">The fork</p>
+  <h2>This is a positioning decision, not a repair</h2>
+  <p style="margin-bottom:20px">Nothing below is broken. The question is which of two products this is, and they need different query layers. Jelani, on the call: <em>"We never sold ourselves as breaking news. We're not reporters. We can't break the news."</em> That is a fair description of what exists today, and the trend detector is the cheaper, more defensible product. Items 1 and 2 only apply if the answer is the other one.</p>
   <ol class="fix">
     <li>
-      <h3>Give the search a time window</h3>
-      <p>Restrict retrieval to the last 24–72 hours. Or run two searches: one for what's new, a small one for background context. This alone is most of the fix.</p>
+      <h3>Only if we want early warning — give the search a time window</h3>
+      <p>Restrict retrieval to the last 24–72 hours, or run two searches: one for what is new, a small one for background. This is most of the change, and it turns the product into something different from what it is today.</p>
     </li>
     <li>
-      <h3>Change the question you're asking the model</h3>
-      <p>Right now it's effectively answering "describe this topic." It needs to answer "what changed in this topic since yesterday" — and be allowed to say "not much." A pulse that honestly reports a quiet day is worth more than one that restates the primer, because quiet days are what make the loud ones mean something.</p>
+      <h3>Only if we want early warning — change the question</h3>
+      <p>Today it answers "what are the top topics of the last 30 days." It would need to answer "what changed since yesterday," and be allowed to say "not much." Quiet days are what make the loud ones mean something.</p>
     </li>
     <li>
-      <h3>Send us what the search already found</h3>
-      <p>The date range it covered, how many documents came back, which publications they came from, and the links.</p>
+      <h3>Worth doing either way — name the investors</h3>
+      <p>Whoever led the round, and who else participated. It is absent from every pulse in the archive and it is the highest-value field on a funding topic. Almost certainly one line in the prompt.</p>
+    </li>
+    <li>
+      <h3>Worth doing either way — send us what the search already found</h3>
+      <p>The date range it covered, how many documents came back, which publications they came from, and the links. This is the one item that helps both products, and it is not a new feature: it is keeping what the search already returns.</p>
     </li>
   </ol>
 </section>
@@ -274,12 +368,22 @@
   <p class="payoff">One change solves four things:<br><span>→</span> a real daily observation<br><span>→</span> mention volume<br><span>→</span> source breadth<br><span>→</span> source links</p>
 </section>
 
+<section class="bonus">
+  <p class="kicker">The version worth considering</p>
+  <h2>The lag is the signal, not the defect</h2>
+  <p>Michael, on the call: <em>"It is nice to know when something shifts from this is just reported news to this is now trending news."</em> That is the product hiding in plain sight.</p>
+  <p>Knowing an event happened is a commodity; there are a hundred outlets for that. Knowing the exact moment it crosses from reported to discussed is not, and it is precisely what this pipeline already detects. Measured against public coverage, that crossing took two days for Consint.AI, six for CARPL.ai and thirteen for Bunkerhill. That spread is information: it says how fast a thing is travelling, and the slowest of the three was the biggest round.</p>
+  <p>It is also the better fit for how we actually use the feed. Publishing the day news breaks means competing with reporters. Publishing as something becomes a conversation is when a point of view gets read.</p>
+  <p class="payoff">Same pipeline, different claim:<br><span>→</span> not "we saw it first"<br><span>→</span> "we saw it become a conversation"<br><span>→</span> and the gap to public coverage is measurable, every time</p>
+</section>
+
 <section>
   <p class="kicker">What we're not asking for</p>
   <ul class="plain">
     <li><strong>Not a new crawler.</strong> The index is fine.</li>
     <li><strong>Not a new data source.</strong></li>
     <li><strong>Not more fields on the current email.</strong> We asked for that before and it was the wrong ask — adding columns to a topic overview just produces a better-labelled topic overview.</li>
+    <li><strong>Not a change to the emotion scoring.</strong> It is already deterministic: a word library with the calculation in JavaScript, so the same text always produces the same score. That is the right design. The day-to-day randomness we measured comes from the summary being reworded each morning, not from the scorer.</li>
   </ul>
 </section>
 
@@ -296,7 +400,8 @@
     <li><strong>Text similarity by lag</strong> — mean Jaccard similarity of content words between pulse pairs on the same topic, bucketed by days apart. <code>0.187 at lag 1d → 0.144 at lag 30d</code>, n = 385 pairs at lag 1.</li>
     <li><strong>Same-day language</strong> — regex over all 410 summaries for <code>today | yesterday | this week | this morning | breaking | just announced | hours ago</code>. Zero matches.</li>
     <li><strong>Citation recency</strong> — newest <em>past</em> month cited per summary (forward-looking policy effective dates excluded; one summary cites January 2028). 18% same month, 50% within one month, 50% two to seven months old.</li>
-    <li><strong>Emotion persistence</strong> — lag-1 autocorrelation of emotion polarity per topic. Mean <code>r₁ = 0.022</code>, <code>z = 1.09</code> against the white-noise null; 6 of 10 topics positive, 4 negative.</li>
+    <li><strong>Emotion persistence</strong> — lag-1 autocorrelation of emotion polarity per topic, computed only on days that carry emotion data (27 Jul onward, 14&ndash;15 per topic). Mean <code>r₁ = &minus;0.012</code>, <code>z = &minus;0.04</code> against the white-noise null; 4 of 10 topics positive. <strong>Computed naively across all 40 days it reads <code>0.512</code></strong>, which is an artifact of the 26 zero-filled days preceding 27 July. The only genuine exception is AI healthcare regulation at <code>0.521</code>.</li>
+    <li><strong>Lead time against public coverage</strong> — first pulse mention minus first public report. Bunkerhill Health <code>+13d</code> (public 16 Jul, pulse 29 Jul), CARPL.ai <code>+6d</code> (23 Jul / 29 Jul), Consint.AI <code>+2d</code> (6 Aug 11:18 IST / 8 Aug). Corner Health ($32.5M, July) never appears. Khosla Ventures, Sequoia and Optum Ventures appear in <code>0 of 410</code> pulses.</li>
     <li><strong>Index advance</strong> — correlation between email order and newest past fact cited: <code>0.000</code>. Correlation with lag: <code>+0.122</code> (falling further behind over time).</li>
     <li><strong>The control topic</strong> — <code>regulatory-developments-for-artificial-intelligence-in-healthcare</code>: <code>r₁ = 0.498</code> (highest), sentiment sd <code>0.894</code> (highest), largest sentiment shift. The one topic with real news flow is the one that behaves like signal.</li>
   </ul>

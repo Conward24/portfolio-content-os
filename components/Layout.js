@@ -7,6 +7,7 @@ const NAV = [
   { href: '/signals', label: 'Signals', id: 'signals', icon: '◇' },
   { href: '/staging', label: 'Staging', id: 'staging', icon: '◎' },
   { href: '/calendar', label: 'Calendar', id: 'calendar', icon: '▦' },
+  { href: '/log', label: 'I posted this', id: 'log', icon: '✓' },
   { href: '/replies', label: 'Replies', id: 'replies', icon: '↩' },
   { href: '/library', label: 'Photo library', id: 'library', icon: '▤' },
   { href: '/topics', label: 'Topic feeds', id: 'topics', icon: '◈' },
@@ -18,6 +19,7 @@ const NAV = [
 // in a queue with one hand, not the whole workspace.
 const MOBILE_NAV = [
   { href: '/today', label: 'Today', id: 'today', icon: '◆' },
+  { href: '/log', label: 'Posted', id: 'log', icon: '✓' },
   { href: '/replies', label: 'Replies', id: 'replies', icon: '↩' },
   { href: '/advisor', label: 'Advisor', id: 'advisor', icon: '◉' },
   { href: '/library', label: 'Assets', id: 'library', icon: '▤' },
