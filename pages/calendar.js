@@ -253,8 +253,32 @@ export default function Calendar() {
             )}
             {selected.notes && <DetailBlock label="Notes" text={selected.notes} />}
             {Array.isArray(selected.assets) && selected.assets.length > 0 && (
-              <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 10 }}>
-                Assets: {selected.assets.join(', ')}
+              /* Tappable, and with `download` on them, because the whole point of
+                 an asset on a post is getting the file onto the phone you are
+                 about to post from. A joined string of blob URLs was unusable. */
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em',
+                              color: 'var(--text3)', marginBottom: 6 }}>
+                  {selected.assets.length === 1 ? 'Asset' : `Assets (${selected.assets.length})`}
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {selected.assets.map((u, i) => {
+                    var name = '';
+                    try { name = decodeURIComponent(String(u).split('/').pop().split('?')[0]); }
+                    catch (e) { name = 'file'; }
+                    // Vercel Blob appends a random suffix before the extension;
+                    // show the name the file actually has on disk.
+                    var pretty = name.replace(/^\d{10,}-/, '').replace(/-[A-Za-z0-9]{20,}(\.[a-z0-9]+)$/, '$1');
+                    return (
+                      <a key={i} href={u} download target="_blank" rel="noopener noreferrer"
+                         style={{ fontSize: 12, padding: '6px 10px', borderRadius: 6,
+                                  border: '0.5px solid var(--border2)', background: 'var(--bg3)',
+                                  color: 'var(--text)', textDecoration: 'none' }}>
+                        ↓ {selected.assets.length > 1 ? `${i + 1}. ` : ''}{pretty}
+                      </a>
+                    );
+                  })}
+                </div>
               </div>
             )}
             {selected.sentiment && (
