@@ -39,7 +39,7 @@ export default function Library() {
   function handleDrop(e) {
     e.preventDefault();
     setDragOver(false);
-    uploadFiles(Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/')));
+    uploadFiles(Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/') || f.type.startsWith('video/')));
   }
 
   async function deletePhoto(id) {
@@ -49,7 +49,9 @@ export default function Library() {
     } catch (e) { console.error(e); }
   }
 
-  const filtered = filter === 'all' ? photos : photos.filter(p => p.brand === filter);
+  const [q, setQ] = useState('');
+  const filtered = (filter === 'all' ? photos : photos.filter(p => p.brand === filter))
+    .filter(p => !q.trim() || (p.name || '').toLowerCase().includes(q.trim().toLowerCase()));
 
   return (
     <Layout title="Photo library" active="library">
@@ -80,6 +82,17 @@ export default function Library() {
               {f === 'all' ? 'All brands' : BRANDS[f]?.name || f}
             </button>
           ))}
+          {/* 177 files and no way to find one. */}
+          <input
+            value={q}
+            onChange={e => setQ(e.target.value)}
+            placeholder="Search by name"
+            style={{
+              marginLeft: 'auto', fontSize: 12, fontFamily: 'inherit', padding: '5px 10px',
+              borderRadius: 7, border: '0.5px solid var(--border2)',
+              background: 'var(--bg)', color: 'var(--text)', minWidth: 170,
+            }}
+          />
         </div>
 
         {/* Drop zone */}
@@ -120,14 +133,43 @@ export default function Library() {
                 background: 'var(--bg)', border: '0.5px solid var(--border2)',
                 borderRadius: 10, overflow: 'hidden', position: 'relative',
               }}>
-                <img
-                  src={photo.url}
-                  alt={photo.name}
-                  style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', display: 'block' }}
-                />
+                {/* An <img> cannot render an mp4, so every video in here was a
+                    broken box. Videos get a real player with their poster frame;
+                    images keep the square crop. */}
+                {/\.(mp4|mov|webm)$/i.test(photo.name) ? (
+                  <video
+                    src={photo.url}
+                    preload="metadata"
+                    muted
+                    playsInline
+                    controls
+                    style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', display: 'block', background: '#000' }}
+                  />
+                ) : (
+                  <img
+                    src={photo.url}
+                    alt={photo.name}
+                    style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', display: 'block' }}
+                  />
+                )}
                 <div style={{ padding: '8px 10px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <span className={`brand-badge badge-${photo.brand}`}>{BRANDS[photo.brand]?.short || photo.brand}</span>
+                    {/* The point of a library is taking things out of it. Without
+                        this the only way to a file was waiting for it to appear on
+                        a post in today's queue. */}
+                    <a
+                      href={photo.url}
+                      download={photo.name}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title={`Download ${photo.name}`}
+                      style={{
+                        fontSize: 11, fontWeight: 700, textDecoration: 'none',
+                        color: 'var(--text)', border: '0.5px solid var(--border2)',
+                        borderRadius: 5, padding: '2px 7px', marginLeft: 'auto', marginRight: 6,
+                      }}
+                    >↓ Save</a>
                     <button
                       onClick={() => deletePhoto(photo.id)}
                       style={{
