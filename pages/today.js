@@ -434,9 +434,36 @@ export default function Today() {
                             <div style={{ display: 'flex', gap: 10, overflowX: 'auto', marginTop: 10, paddingBottom: 2 }}>
                               {assets.map(a => {
                                 const isVid = /\.mp4$/i.test(a.name);
+                                // A carousel goes up as a LinkedIn document post, so the asset is
+                                // a PDF. An <img> can't preview one, so it gets its own tile.
+                                const isPdf = /\.pdf$/i.test(a.name);
                                 return (
                                   <div key={a.id} style={{ flex: '0 0 auto', display: 'flex', flexDirection: 'column', gap: 6 }}>
-                                    {isVid ? (
+                                    {isPdf ? (
+                                      <a
+                                        href={a.url}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        style={{
+                                          height: 190, width: 152, borderRadius: 8,
+                                          border: '1px solid var(--border)', background: 'var(--bg2)',
+                                          display: 'flex', flexDirection: 'column', justifyContent: 'center',
+                                          alignItems: 'center', gap: 8, padding: 12, boxSizing: 'border-box',
+                                          textAlign: 'center', textDecoration: 'none',
+                                        }}
+                                      >
+                                        <span style={{
+                                          fontSize: 11, fontWeight: 800, letterSpacing: 0.6, color: '#fff',
+                                          background: '#C4302B', borderRadius: 4, padding: '3px 7px',
+                                        }}>PDF</span>
+                                        <span style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--text2)', lineHeight: 1.4, wordBreak: 'break-word' }}>
+                                          {a.name}
+                                        </span>
+                                        <span style={{ fontSize: 10.5, color: 'var(--text3)', lineHeight: 1.4 }}>
+                                          Tap to preview · upload as a LinkedIn document post
+                                        </span>
+                                      </a>
+                                    ) : isVid ? (
                                       <video
                                         src={a.url}
                                         controls
@@ -460,7 +487,7 @@ export default function Today() {
                                       disabled={saving === a.id}
                                       style={{ padding: '10px 0', fontSize: 13, fontWeight: 600, width: '100%' }}
                                     >
-                                      {saving === a.id ? 'Preparing…' : isVid ? 'Save video' : 'Save image'}
+                                      {saving === a.id ? 'Preparing…' : isPdf ? 'Save PDF' : isVid ? 'Save video' : 'Save image'}
                                     </button>
                                   </div>
                                 );
