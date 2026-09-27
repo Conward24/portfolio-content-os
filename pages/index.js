@@ -23,8 +23,9 @@ export default function Home() {
     try {
       const sig = JSON.parse(raw);
       setIncoming(sig);
+      if (sig.brand) setBrand(sig.brand);
       setInput(sig.analysis || sig.summary || sig.topic || '');
-      setPostType('sentiment');
+      if (!sig.blabSignal) setPostType('sentiment');
       if (sig.derived?.type) setSentiment(sig.derived.type);
       if (sig.derived?.intensity) setIntensity(sig.derived.intensity);
     } catch { /* ignore malformed handoff */ }
@@ -46,7 +47,7 @@ export default function Home() {
       const data = await res.json();
       if (data.drafts) {
         sessionStorage.setItem('drafts', JSON.stringify(data.drafts));
-        sessionStorage.setItem('draftMeta', JSON.stringify({ brand, postType, sentiment, intensity }));
+        sessionStorage.setItem('draftMeta', JSON.stringify({ brand, postType, sentiment, intensity, blabSignal: incoming?.blabSignal || null }));
         router.push('/staging');
       }
     } catch (e) {

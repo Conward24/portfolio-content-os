@@ -265,6 +265,9 @@ export default function Staging() {
           type: meta.postType,
           sentiment: meta.sentiment || null,
           title: copy.split('\n')[0].slice(0, 60),
+          // Posts drafted from the signal board carry the signal, so we can later compare
+          // how Blabbing-sourced posts perform against everything else.
+          ...(meta.blabSignal ? { signal: meta.blabSignal, tag: 'blabbing-signal' } : {}),
         }),
       });
       setApproved(prev => [...prev, idx]);
