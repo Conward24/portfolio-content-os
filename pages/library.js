@@ -8,6 +8,8 @@ export default function Library() {
   const [uploadBrand, setUploadBrand] = useState('mylua');
   const [filter, setFilter] = useState('all');
   const [dragOver, setDragOver] = useState(false);
+  // Ids whose real file has been asked for. Nothing else is fetched from Blob.
+  const [shown, setShown] = useState({});
   const fileRef = useRef();
 
   useEffect(() => { loadPhotos(); }, []);
@@ -133,10 +135,27 @@ export default function Library() {
                 background: 'var(--bg)', border: '0.5px solid var(--border2)',
                 borderRadius: 10, overflow: 'hidden', position: 'relative',
               }}>
-                {/* An <img> cannot render an mp4, so every video in here was a
-                    broken box. Videos get a real player with their poster frame;
-                    images keep the square crop. */}
-                {/\.(mp4|mov|webm)$/i.test(photo.name) ? (
+                {/* The grid used to load every file at full size on every visit, about the
+                    whole store each time, and that download volume is what got the Blob store
+                    suspended on 2026-10-01. Now each tile is a light placeholder and the real
+                    file is fetched only when it is tapped. */}
+                {!shown[photo.id] ? (
+                  <button
+                    type="button"
+                    onClick={() => setShown(s => ({ ...s, [photo.id]: true }))}
+                    style={{
+                      width: '100%', aspectRatio: '1', display: 'flex', flexDirection: 'column',
+                      alignItems: 'center', justifyContent: 'center', gap: 6, border: 'none',
+                      background: 'var(--bg2, #f3f1ec)', cursor: 'pointer', fontFamily: 'inherit',
+                      color: 'var(--text3)', fontSize: 12,
+                    }}
+                  >
+                    <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text2, var(--text))' }}>
+                      {(photo.name.split('.').pop() || 'file').toUpperCase()}
+                    </span>
+                    <span>Tap to preview</span>
+                  </button>
+                ) : /\.(mp4|mov|webm)$/i.test(photo.name) ? (
                   <video
                     src={photo.url}
                     preload="metadata"
@@ -145,10 +164,16 @@ export default function Library() {
                     controls
                     style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', display: 'block', background: '#000' }}
                   />
+                ) : /\.pdf$/i.test(photo.name) ? (
+                  <a href={photo.url} target="_blank" rel="noopener noreferrer" style={{
+                    width: '100%', aspectRatio: '1', display: 'flex', alignItems: 'center',
+                    justifyContent: 'center', fontSize: 13, color: 'var(--text)',
+                  }}>Open PDF</a>
                 ) : (
                   <img
                     src={photo.url}
                     alt={photo.name}
+                    loading="lazy"
                     style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', display: 'block' }}
                   />
                 )}
