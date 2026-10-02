@@ -468,13 +468,14 @@ export default function Today() {
                                         src={a.url}
                                         controls
                                         playsInline
-                                        preload="metadata"
+                                        preload="none"
                                         style={{ height: 190, borderRadius: 8, background: '#000', display: 'block' }}
                                       />
                                     ) : (
                                       <img
                                         src={a.url}
                                         alt={a.name}
+                                        loading="lazy"
                                         style={{ height: 190, borderRadius: 8, border: '1px solid var(--border)', display: 'block' }}
                                       />
                                     )}
