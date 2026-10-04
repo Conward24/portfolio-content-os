@@ -20,10 +20,10 @@ WRITING PERSONA (apply these lenses to every post):
   // Henway: Naval (leverage + positioning) + Moore (beachhead market) + Hormozi (offer clarity)
   henway: `
 WRITING PERSONA (apply these lenses to every post):
-- Naval lens: Think in leverage. Henway gives founders non-dilutive capital leverage, technical architecture leverage, and institutional network leverage. Posts should communicate that building with Henway multiplies what a founder can do, not just helps them do it.
-- Geoffrey Moore lens: Henway is crossing the chasm from "AI consulting" to "venture architecture platform." The beachhead is early-stage AI founders in regulated sectors who need both technical depth and capital access. Every post should speak directly to that specific customer.
-- Hormozi lens: Make the offer clear. "We help you go from idea to fundable prototype with $0 of your equity at risk" is cleaner than "we provide AI architecture services." State what the founder gets, what it costs them, and what they leave with.
-- Keep it calm and peer-to-peer. Naval's voice, not a pitch deck.`,
+- April Dunford lens: Category first. Henway is an AI app builder for people who aren't technical. Say what it is plainly before anything clever.
+- Paul Graham lens: Plain words, no qualifiers. Say the thing a person would say to a friend.
+- Hormozi lens: Make the trade concrete. The subscription you'd pay for, versus seven minutes and an app that's yours.
+- Keep it warm and first person. A founder talking to his own people, not a launch announcement.`,
 
   // Blabbing: Gary Vee (distribution + attention) + Walker (demand gen) + Hormozi (value clarity)
   blabbing: `
@@ -62,16 +62,18 @@ const HASHTAG_BANKS = {
     },
   },
   henway: {
-    tier1: ['#VentureArchitecture', '#NonDilutiveFunding', '#AIGovernance', '#FounderStrategy', '#SBIR', '#STTR', '#AgenticAI', '#StartupFunding', '#AIFounders', '#AIRegulation', '#ResponsibleAI', '#HumanInTheLoop', '#FounderEquity', '#BlackFounders', '#IBMwatsonx'],
-    never: ['#Startup', '#Entrepreneur', '#Business', '#AI', '#Tech', '#Innovation', '#Hustle'],
+    tier1: ['#AIAppBuilder', '#NoCode', '#BuildInPublic', '#BlackFounders', '#SoloFounder', '#FounderLife', '#SmallBusinessTools', '#CreatorTools', '#AppBuilder'],
+    never: ['#Startup', '#Entrepreneur', '#Business', '#AI', '#Tech', '#Innovation', '#Hustle', '#SBIR', '#VentureArchitecture'],
     contextRules: {
-      regulation: ['#AIRegulation', '#AIGovernance', '#ResponsibleAI', '#AIPolicy', '#HumanInTheLoop'],
-      funding: ['#NonDilutiveFunding', '#SBIR', '#STTR', '#GrantFunding', '#NSFFunding', '#FounderEquity'],
-      governance: ['#AgenticAI', '#HumanInTheLoop', '#AIGovernance', '#TrustableAI', '#ResponsibleAI'],
-      capital: ['#VentureArchitecture', '#FounderEquity', '#StartupFunding', '#EarlyStageAI'],
-      diversity: ['#BlackFounders', '#UnderrepresentedFounders', '#EquitableAI', '#InclusiveTech'],
+      program: ['#BlackAmbition', '#FundableFounders', '#BlackFounders', '#FounderJourney'],
+      creator: ['#CreatorTools', '#ContentCreator', '#BrandDeals'],
+      fitness: ['#FitnessCoach', '#OnlineCoaching', '#PersonalTrainer'],
+      travel: ['#TravelPlanning', '#TravelTips', '#TripPlanning'],
+      healthcare: ['#HealthcareProfessionals', '#NursesOfInstagram', '#PrivatePractice'],
+      diversity: ['#BlackFounders', '#UnderrepresentedFounders', '#BlackInTech'],
     },
   },
+
   blabbing: {
     tier1: ['#MarketIntelligence', '#CompetitiveIntelligence', '#SentimentAnalysis', '#AIContent', '#PRStrategy', '#MediaMonitoring', '#MarketResearch', '#BusinessIntelligence', '#ThoughtLeadership', '#CRE', '#CommercialRealEstate'],
     never: ['#Marketing', '#Content', '#Business', '#AI', '#Data', '#News'],
@@ -87,7 +89,7 @@ const HASHTAG_BANKS = {
     never: ['#AI', '#Tech', '#Hustle', '#Grind', '#Entrepreneur', '#Startup'],
     contextRules: {
       mylua: ['#BlackMaternalHealth', '#AgenticAI', '#IBMwatsonx', '#HealthcareAI', '#MaternalHealthEquity'],
-      henway: ['#VentureArchitecture', '#NonDilutiveFunding', '#AIGovernance', '#FounderStrategy', '#SBIR'],
+      henway: ['#AIAppBuilder', '#NoCode', '#BlackFounders', '#FounderLife', '#BuildInPublic'],
       blabbing: ['#MarketIntelligence', '#CompetitiveIntelligence', '#AIContent', '#SentimentAnalysis'],
       ibm: ['#IBMwatsonx', '#AgenticAI', '#EnterpriseAI', '#IBMPartner', '#IBMDataAndAI'],
     },
@@ -236,6 +238,7 @@ FORMAT:
 - Write only the post. No preamble, no explanation.`;
 
   const systemPrompt = `${brandConfig.systemPrompt}
+PLATFORM: ${platform || 'LinkedIn'}
 ${personaLayer}
 POST TYPE: ${postTypeInstruction}
 ${sentimentContext}
