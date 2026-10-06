@@ -12,6 +12,16 @@ function CameraChip({ style }) {
   );
 }
 
+/** Signal-lane marker: a post drafted from the Blabbing ladder, not one of Michael's own (post.lane === 'signal'). */
+function SignalChip({ style }) {
+  return (
+    <span style={{
+      fontSize: 10, fontWeight: 700, letterSpacing: '.04em', padding: '2px 6px', borderRadius: 4,
+      background: '#E8F1FF', color: '#0B4FB3', border: '0.5px solid #A9C8F5', whiteSpace: 'nowrap', ...style,
+    }}>📡 signal</span>
+  );
+}
+
 /** Labeled text block for the detail panel (script, notes, first comment). */
 function DetailBlock({ label, text, onCopy, copied, accent }) {
   return (
@@ -147,6 +157,11 @@ export default function Calendar() {
     });
   }
 
+  // Own posts vs signal posts this week (the rule: about 1 signal to 3 own, per brand).
+  const weekPosts = filtered.filter(p => DAYS.some((_, i) => p.date === getDateForDay(weekStart, i)));
+  const signalCount = weekPosts.filter(p => p.lane === 'signal').length;
+  const ownCount = weekPosts.length - signalCount;
+
   const brandCounts = Object.keys(BRANDS).reduce((acc, b) => {
     acc[b] = allPosts.filter(p => p.brand === b).length;
     return acc;
@@ -157,7 +172,9 @@ export default function Calendar() {
       <div className="page-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <button className="btn" onClick={() => setWeekOffset(w => w - 1)} style={{ padding: '6px 12px' }}>← prev</button>
-          <span style={{ fontSize: 14, fontWeight: 500, minWidth: 200 }}>{weekLabel}</span>
+          <span style={{ fontSize: 14, fontWeight: 500, minWidth: 200 }}>{weekLabel}
+            <span style={{ display: 'block', fontSize: 11, fontWeight: 400, color: 'var(--text3)' }}>{ownCount} own · {signalCount} signal</span>
+          </span>
           <button className="btn" onClick={() => setWeekOffset(w => w + 1)} style={{ padding: '6px 12px' }}>next →</button>
         </div>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
@@ -216,6 +233,7 @@ export default function Calendar() {
                   );
                 })()}
                 {selected.kind === 'camera' && <CameraChip />}
+                {selected.lane === 'signal' && <SignalChip />}
                 {selected.sentiment && (
                   <span className={`stag stag-${selected.sentiment}`}>{SENTIMENT_TYPES[selected.sentiment]?.name}</span>
                 )}
@@ -326,6 +344,7 @@ export default function Calendar() {
                           style={labelColors(post.channelLabel) ? { color: labelColors(post.channelLabel).text } : undefined}>
                           {post.channelLabel || (post.brand === 'mylua' ? 'MYLÚA' : (post.brand || '').toUpperCase())}
                           {post.kind === 'camera' && <CameraChip style={{ marginLeft: 6, fontSize: 9, padding: '1px 5px' }} />}
+                          {post.lane === 'signal' && <SignalChip style={{ marginLeft: 6, fontSize: 9, padding: '1px 5px' }} />}
                         </div>
                         <div className="post-card-title">{post.title}</div>
                         <div className="post-card-type">
