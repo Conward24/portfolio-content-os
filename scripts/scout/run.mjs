@@ -11,12 +11,18 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { createRequire } from 'node:module';
 import { loadEnv, TMP, DATA, SCOUT_HOME } from './env.mjs';
 
 loadEnv();
-const { Redis } = await import('@upstash/redis');
-const { put } = await import('@vercel/blob');
+// The worker's two packages live in ~/scout/node_modules, not the repo's:
+// repo node_modules get cleaned up when disk runs low, and the schedule
+// shouldn't die with them. Falls back to the repo's if present.
+const req = createRequire(path.join(SCOUT_HOME, 'package.json'));
+const load = name => import(pathToFileURL(req.resolve(name, { paths: [SCOUT_HOME, process.cwd()] })).href);
+const { Redis } = await load('@upstash/redis');
+const { put } = await load('@vercel/blob');
 const { collectWatched, resolveShared, messagesLinks, tmpClean } = await import('./collect.mjs');
 const { loadHistory, saveHistory, recordPosts, scorePost, pick } = await import('./score.mjs');
 const { readMedia } = await import('./media.mjs');

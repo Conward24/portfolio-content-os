@@ -8,6 +8,9 @@ import { cardId, parsePostUrl } from '../../lib/scout/keys.mjs';
 
 const run = promisify(execFile);
 const IG_ACTOR = 'apify/instagram-scraper';
+// Hashtag pages on the main scraper return the NEWEST posts (0-5 likes); the
+// hashtag scraper's reels mode returns the popular ones. Tested 2026-10-25.
+const IG_TAG_ACTOR = 'apify/instagram-hashtag-scraper';
 const TT_ACTOR = 'clockworks/tiktok-scraper';
 
 // ── Normalisers: every source becomes the same Post shape ───────────────────
@@ -28,10 +31,10 @@ export function fromInstagram(it, source) {
     kind,
     caption: it.caption || '',
     postedAt: it.timestamp || null,
-    views: num(it.videoPlayCount) ?? num(it.videoViewCount),
+    views: num(it.videoPlayCount) ?? num(it.igPlayCount) ?? num(it.videoViewCount),
     likes: num(it.likesCount),
     comments: num(it.commentsCount),
-    shares: null,
+    shares: num(it.sharesCount),
     saves: null,
     durationSec: num(it.videoDuration),
     coverUrl: it.displayUrl || null,
@@ -112,7 +115,16 @@ export async function collectWatched(config, autoWatch, budget, log) {
   const c = config.collect;
   const jobs = [];
 
+  // Discovery (hashtags, searches) is most of the spend, so it rotates: each
+  // day covers `discoveryLanesPerDay` lanes. Watched accounts run every day.
+  const laneNames = Object.keys(config.lanes);
+  const perDay = Math.min(c.discoveryLanesPerDay || laneNames.length, laneNames.length);
+  const day = Math.floor(Date.now() / 86400e3);
+  const discoverToday = new Set(Array.from({ length: perDay }, (_, i) => laneNames[(day * perDay + i) % laneNames.length]));
+  log.info(`discovery today: ${[...discoverToday].join(', ')}`);
+
   for (const [lane, L] of Object.entries(config.lanes)) {
+    const discover = discoverToday.has(lane);
     const auto = Object.entries(autoWatch).filter(([, v]) => v.lane === lane).map(([k]) => k.split(':'));
     const igAccounts = [...new Set([...(L.instagram?.accounts || []), ...auto.filter(([p]) => p === 'instagram').map(([, h]) => h)])];
     const ttAccounts = [...new Set([...(L.tiktok?.accounts || []), ...auto.filter(([p]) => p === 'tiktok').map(([, h]) => h)])];
@@ -121,14 +133,13 @@ export async function collectWatched(config, autoWatch, budget, log) {
       if (igAccounts.length) jobs.push({ lane, what: 'ig accounts', actor: IG_ACTOR, norm: fromInstagram, source: 'account', input: {
         directUrls: igAccounts.map(h => `https://www.instagram.com/${h}/`), resultsType: 'posts',
         resultsLimit: c.accountPostsPerRun, onlyPostsNewerThan: `${c.accountWindowDays} days`, addParentData: true } });
-      if (L.instagram?.hashtags?.length) jobs.push({ lane, what: 'ig hashtags', actor: IG_ACTOR, norm: fromInstagram, source: 'hashtag', input: {
-        directUrls: L.instagram.hashtags.map(t => `https://www.instagram.com/explore/tags/${t}/`), resultsType: 'posts',
-        resultsLimit: c.hashtagPostsPerRun, onlyPostsNewerThan: `${config.score.maxPostAgeDays} days`, addParentData: true } });
+      if (discover && L.instagram?.hashtags?.length) jobs.push({ lane, what: 'ig hashtag reels', actor: IG_TAG_ACTOR, norm: fromInstagram, source: 'hashtag', tags: L.instagram.hashtags, input: {
+        hashtags: L.instagram.hashtags, resultsType: 'reels', resultsLimit: c.hashtagPostsPerRun } });
       if (ttAccounts.length) jobs.push({ lane, what: 'tt accounts', actor: TT_ACTOR, norm: fromTikTok, source: 'account', input: {
         profiles: ttAccounts, resultsPerPage: c.accountPostsPerRun, profileSorting: 'latest', excludePinnedPosts: true,
         shouldDownloadSlideshowImages: true, shouldDownloadVideos: false, shouldDownloadCovers: false } });
       const tags = L.tiktok?.hashtags || [], q = L.tiktok?.searches || [];
-      if (tags.length || q.length) jobs.push({ lane, what: 'tt discovery', actor: TT_ACTOR, norm: fromTikTok, source: 'discovery', input: {
+      if (discover && (tags.length || q.length)) jobs.push({ lane, what: 'tt discovery', actor: TT_ACTOR, norm: fromTikTok, source: 'discovery', input: {
         hashtags: tags, searchQueries: q, searchSection: '/video', resultsPerPage: c.searchPostsPerRun,
         shouldDownloadSlideshowImages: true, shouldDownloadVideos: false, shouldDownloadCovers: false } });
     } else {
@@ -147,7 +158,8 @@ export async function collectWatched(config, autoWatch, budget, log) {
       let n = 0;
       for (const it of items) {
         if (it.error || it.errorCode) continue;
-        const detail = it.inputUrl ? it.inputUrl.replace(/^https:\/\/www\.instagram\.com\//, '').replace(/\/$/, '') : (it.authorMeta?.name && job.source === 'account' ? `@${it.authorMeta.name}` : (it.searchQuery || it.input || ''));
+        const tag = job.tags && (job.tags.find(t => (it.hashtags || []).map(h => String(h).toLowerCase()).includes(t.toLowerCase())) || job.tags[0]);
+        const detail = tag ? tag : it.inputUrl ? it.inputUrl.replace(/^https:\/\/www\.instagram\.com\//, '').replace(/\/$/, '') : (it.authorMeta?.name && job.source === 'account' ? `@${it.authorMeta.name}` : (it.searchQuery || it.input || ''));
         const source = job.source === 'discovery' ? (it.searchQuery ? 'search' : 'hashtag') : job.source;
         posts.push(job.norm(it, { lane: job.lane, source, sourceDetail: String(detail || '').slice(0, 80) }));
         n++;

@@ -105,22 +105,25 @@
   "collect": {
     "accountPostsPerRun": 8,
     "accountWindowDays": 10,
-    "hashtagPostsPerRun": 15,
-    "searchPostsPerRun": 12,
-    "maxAutoAccountsPerPlatform": 40
+    "hashtagPostsPerRun": 8,
+    "searchPostsPerRun": 8,
+    "maxAutoAccountsPerPlatform": 40,
+    "discoveryLanesPerDay": 2
   },
   "score": {
     "maxPostAgeDays": 21,
+    "maxDiscoveryAgeDays": 60,
     "minAccountHistory": 5,
     "accountOutlierMin": 3,
     "tiktokReachMin": 2,
     "tiktokMinViews": 20000,
     "igDiscoveryMinLikes": 1500,
+    "igDiscoveryMinPlays": 50000,
     "maxCardsPerRun": 10,
     "maxCardsPerLane": 4
   },
   "budget": {
-    "apifyMaxUsdPerActorRun": 0.4,
+    "apifyMaxUsdPerActorRun": 0.5,
     "apifyMaxUsdPerDay": 1.2
   }
 }

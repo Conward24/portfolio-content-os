@@ -20,7 +20,7 @@ yt-dlp, and those don't run in a serverless function.
 To run it by hand from this folder:
 
 ```
-node scripts/scout/run.mjs --dry       # collect + score, print, write nothing
+node scripts/scout/run.mjs --dry       # collect + score, print, write nothing (collecting still costs Apify credit)
 node scripts/scout/run.mjs --limit 2   # full run, analyse at most 2 posts
 node scripts/scout/run.mjs --inbox     # shared links only
 ```

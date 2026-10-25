@@ -18,6 +18,9 @@ async function call(pathname, opts = {}) {
 
 export async function runActor(actor, input, { maxUsd = 0.4, timeoutSec = 600 } = {}) {
   const id = actor.replace('/', '~');
+  // Pay-per-event actors refuse a cap under $0.50 (clockworks/tiktok-scraper,
+  // 2026-10-25). It's a ceiling, not a charge: runs cost what they return.
+  maxUsd = Math.max(0.5, maxUsd);
   const started = await call(`/acts/${id}/runs?maxTotalChargeUsd=${maxUsd}&timeout=${timeoutSec}`, {
     method: 'POST', body: JSON.stringify(input),
   });

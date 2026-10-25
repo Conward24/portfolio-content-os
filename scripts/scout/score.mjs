@@ -58,26 +58,29 @@ export function scorePost(history, p, cfg) {
   const att = attention(p);
   const ageDays = p.postedAt ? (Date.now() - Date.parse(p.postedAt)) / 86400e3 : null;
   if (p.source === 'shared') return { keep: true, rank: 1e9, reason: 'Someone sent you this', multiple: null, ageDays };
-  if (ageDays != null && ageDays > S.maxPostAgeDays) return { keep: false };
+  // Discovery finds formats that are still travelling weeks later; watched
+  // accounts are judged on what they posted recently.
+  const maxAge = p.source === 'account' ? S.maxPostAgeDays : (S.maxDiscoveryAgeDays || S.maxPostAgeDays);
+  if (ageDays != null && ageDays > maxAge) return { keep: false };
   if (!att) return { keep: false };
 
   const base = accountBaseline(history, p);
   if (base.n >= S.minAccountHistory && base.median > 0) {
     const multiple = att / base.median;
     if (multiple >= S.accountOutlierMin) {
-      return { keep: true, rank: Math.log10(att) * multiple, multiple, basis: 'account', reason: `${multiple.toFixed(1)}× @${p.handle}'s usual ${p.views ? 'views' : 'engagement'}`, ageDays };
+      return { keep: true, rank: Math.log10(att) * Math.log2(1 + multiple), multiple, basis: 'account', reason: `${multiple.toFixed(1)}× @${p.handle}'s usual ${p.views ? 'views' : 'engagement'}`, ageDays };
     }
     return { keep: false };
   }
   if (p.platform === 'tiktok' && p.followers && p.views >= S.tiktokMinViews) {
     const reach = p.views / p.followers;
     if (reach >= S.tiktokReachMin) {
-      return { keep: true, rank: Math.log10(att) * reach, multiple: reach, basis: 'followers', reason: `${reach.toFixed(1)}× views per follower (${fmt(p.views)} views, ${fmt(p.followers)} followers)`, ageDays };
+      return { keep: true, rank: Math.log10(att) * Math.log2(1 + reach), multiple: reach, basis: 'followers', reason: `${reach.toFixed(1)}× views per follower (${fmt(p.views)} views, ${fmt(p.followers)} followers)`, ageDays };
     }
     return { keep: false };
   }
-  if (p.platform === 'instagram' && p.source !== 'account' && (p.likes || 0) >= S.igDiscoveryMinLikes) {
-    return { keep: true, rank: Math.log10(att) * 2, multiple: null, basis: 'hashtag', reason: `Top post in ${p.sourceDetail ? '#' + p.sourceDetail.replace(/^explore\/tags\//, '') : 'a watched hashtag'} (${fmt(p.likes)} likes)`, ageDays };
+  if (p.platform === 'instagram' && p.source !== 'account' && ((p.views || 0) >= S.igDiscoveryMinPlays || (p.likes || 0) >= S.igDiscoveryMinLikes)) {
+    return { keep: true, rank: Math.log10(att) * 3, multiple: null, basis: 'hashtag', reason: `Top reel in #${p.sourceDetail || 'a watched hashtag'} (${p.views ? `${fmt(p.views)} plays` : `${fmt(p.likes)} likes`})`, ageDays };
   }
   return { keep: false };
 }
@@ -89,18 +92,27 @@ export function fmt(n) {
   return String(n);
 }
 
-// Shared links first, then the strongest outliers, spread across lanes.
+// Shared links first, then the strongest outliers, spread across lanes and
+// alternating platforms so one app's numbers can't crowd out the other.
 export function pick(scored, cfg) {
   const S = cfg.score;
-  const shared = scored.filter(x => x.s.reason && x.p.source === 'shared');
-  const rest = scored.filter(x => x.p.source !== 'shared').sort((a, b) => b.s.rank - a.s.rank);
+  const shared = scored.filter(x => x.p.source === 'shared');
+  const byPlatform = { instagram: [], tiktok: [] };
+  for (const x of scored.filter(x => x.p.source !== 'shared').sort((a, b) => b.s.rank - a.s.rank)) (byPlatform[x.p.platform] ||= []).push(x);
   const perLane = {};
   const out = [...shared];
-  for (const x of rest) {
-    if (out.length >= S.maxCardsPerRun + shared.length) break;
-    if ((perLane[x.p.lane] || 0) >= S.maxCardsPerLane) continue;
-    perLane[x.p.lane] = (perLane[x.p.lane] || 0) + 1;
-    out.push(x);
+  const queues = Object.values(byPlatform).filter(q => q.length);
+  while (out.length < S.maxCardsPerRun + shared.length && queues.some(q => q.length)) {
+    for (const q of queues) {
+      while (q.length) {
+        const x = q.shift();
+        if ((perLane[x.p.lane] || 0) >= S.maxCardsPerLane) continue;
+        perLane[x.p.lane] = (perLane[x.p.lane] || 0) + 1;
+        out.push(x);
+        break;
+      }
+      if (out.length >= S.maxCardsPerRun + shared.length) break;
+    }
   }
   return out;
 }
