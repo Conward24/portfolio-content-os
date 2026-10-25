@@ -29,6 +29,7 @@ const { readMedia } = await import('./media.mjs');
 const { analyzePost } = await import('./analyze.mjs');
 const { apifyReady } = await import('./apify.mjs');
 const K = await import('../../lib/scout/keys.mjs');
+const { FACELESS_FIT_CAP } = await import('../../lib/scout/rules.mjs');
 
 const args = process.argv.slice(2);
 const DRY = args.includes('--dry');
@@ -136,6 +137,14 @@ async function main() {
       const slides = [];
       for (const [i, f] of media.slides.entries()) slides.push(await upload(f, `${slug}/s-${i + 1}.jpg`));
 
+      // His numbers: posts with no person on camera hold 1-4s on his accounts,
+      // so a faceless format can't top the feed however it did for its creator.
+      if (analysis.presenter === 'none') {
+        for (const l of config.activeLanes) {
+          const f = analysis.fit?.[l];
+          if (f && Number(f.score) > FACELESS_FIT_CAP) { f.score = FACELESS_FIT_CAP; f.why = `${f.why || ''} (Capped at ${FACELESS_FIT_CAP}: no one on camera, and faceless posts hold 1-4s on his accounts.)`.trim(); }
+        }
+      }
       const fits = config.activeLanes.map(l => Number(analysis.fit?.[l]?.score) || 0);
       const card = {
         id: p.id, platform: p.platform, url: p.url, handle: p.handle, followers: p.followers, kind: p.kind,

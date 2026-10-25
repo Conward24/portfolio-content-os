@@ -1,7 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { redis } from '../../../lib/redis';
 import { SCOUT_CARDS } from '../../../lib/scout/keys.mjs';
-import { brandRules, SHORT_FORM_RULES } from '../../../lib/scout/rules.mjs';
+import { brandRules, SHORT_FORM_RULES, HIS_NUMBERS } from '../../../lib/scout/rules.mjs';
 import { MICHAEL_VOICE } from '../../../lib/voice';
 import scoutConfig from '../../../scout/config.json';
 
@@ -26,8 +26,9 @@ function extractJson(text) {
 const VIDEO_SHAPE = `{
   "kind": "video",
   "title": "working title",
-  "lengthSec": 45,
-  "voice": "who is heard: Tiffany voiceover | Michael on camera | Michael voiceover | text only + sound",
+  "lengthSec": 30,
+  "lengths": { "shorts": "18 or under", "tiktok": "15-30", "reels": "30-60", "plan": "one line: what to trim for the Shorts cut" },
+  "voice": "who is heard: Michael on camera (the default; his numbers) | Michael voiceover | Tiffany voiceover (product explainers only)",
   "hook": { "visual": "", "onScreen": "", "spoken": "" },
   "beats": [ { "at": "0-3s", "visual": "what is on screen, from footage Michael actually has or can shoot", "onScreen": "overlay text", "spoken": "line, or null" } ],
   "caption": "the post caption",
@@ -63,6 +64,8 @@ export default async function handler(req, res) {
 ${brandRules(LANES)}
 
 ${SHORT_FORM_RULES}
+
+${HIS_NUMBERS}
 ${brand === 'mike' ? `\nHis personal voice, adapted from LinkedIn to short-form (keep the opener and reframe habits):\n${MICHAEL_VOICE.slice(0, 2500)}` : ''}
 
 Reply with JSON only.`;

@@ -83,7 +83,7 @@ function mockText(m) {
     for (const s of m.slides || []) lines.push(`SLIDE ${s.n}: ${s.headline}`, s.body || '', `  visual: ${s.visual || ''}`, '');
     if (m.designNotes) lines.push(`Design: ${m.designNotes}`, '');
   } else {
-    lines.push(`Length ~${m.lengthSec}s · Voice: ${m.voice}`, `HOOK: ${m.hook?.visual} | on screen: "${m.hook?.onScreen}" | spoken: "${m.hook?.spoken || ''}"`, '');
+    lines.push(`Length ~${m.lengthSec}s · Voice: ${m.voice}`, ...(m.lengths ? [`Cuts: Shorts ${m.lengths.shorts}s · TikTok ${m.lengths.tiktok}s · Reels ${m.lengths.reels}s${m.lengths.plan ? ` (${m.lengths.plan})` : ''}`] : []), `HOOK: ${m.hook?.visual} | on screen: "${m.hook?.onScreen}" | spoken: "${m.hook?.spoken || ''}"`, '');
     for (const b of m.beats || []) lines.push(`${b.at}  ${b.visual}`, b.onScreen ? `   text: ${b.onScreen}` : '', b.spoken ? `   says: ${b.spoken}` : '');
     lines.push('', `Assets: ${(m.assets || []).join('; ')}`);
   }
@@ -117,7 +117,7 @@ function Mock({ m }) {
         </div>
       ) : (
         <>
-          <div style={{ fontSize: 12.5, color: 'var(--text3)', marginTop: 6 }}>~{m.lengthSec}s · {m.voice}</div>
+          <div style={{ fontSize: 12.5, color: 'var(--text3)', marginTop: 6 }}>~{m.lengthSec}s · {m.voice}{m.lengths ? ` · Shorts ${m.lengths.shorts}s, TikTok ${m.lengths.tiktok}s, Reels ${m.lengths.reels}s` : ''}</div>
           <div style={{ marginTop: 8 }}>
             {(m.beats || []).map((b, i) => (
               <div key={i} style={{ display: 'grid', gridTemplateColumns: '58px 1fr', gap: 8, padding: '6px 0', borderTop: '0.5px solid var(--border2)', fontSize: 12.5, lineHeight: 1.45 }}>
@@ -198,6 +198,7 @@ function Card({ card, lane, onStatus, onCard }) {
               <Row label="Why it worked">{(a.whyItWorked || []).map((w, i) => <div key={i}>• {w}</div>)}</Row>
               <Row label="The recipe">{a.recipe}</Row>
               <Row label="Structure">{(a.structure || []).map((s, i) => <div key={i}><b>{s.at}</b> {s.beat}</div>)}</Row>
+              {a.presenter && <Row label="On camera">{a.presenter}</Row>}
               <Row label="Pacing">{a.pacing}</Row>
               <Row label="Text">{a.textStyle}</Row>
               <Row label="Audio">{a.audio}</Row>
