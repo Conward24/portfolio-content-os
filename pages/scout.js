@@ -337,7 +337,7 @@ export default function Scout() {
 
         {error && <div style={{ color: '#a33', fontSize: 13 }}>{error}</div>}
         {!data && !error && <div style={{ color: 'var(--text3)', fontSize: 13 }}>Loading…</div>}
-        {data && !cards.length && <div style={{ color: 'var(--text3)', fontSize: 13.5, padding: '24px 0' }}>Nothing here{lane !== 'all' ? ` for ${LANES.find(l => l[0] === lane)[1]}` : ''} yet. The worker runs every morning.</div>}
+        {data && !cards.length && <div style={{ color: 'var(--text3)', fontSize: 13.5, padding: '24px 0' }}>Nothing here{lane !== 'all' ? ` for ${LANES.find(l => l[0] === lane)[1]}` : ''} yet. The worker runs Sunday mornings.</div>}
         {cards.map(c => <Card key={c.id} card={c} lane={lane} onStatus={onStatus} onCard={replace} />)}
       </div>
       <style jsx>{`

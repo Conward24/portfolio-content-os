@@ -11,10 +11,11 @@ yt-dlp, and those don't run in a serverless function.
 
 | When | What |
 |---|---|
-| 6:30am daily (or on wake) | Full run: watched accounts, hashtags, searches, shared links |
+| Sundays 6:30am (or on wake) | Full run: watched accounts, hashtags, searches, shared links. Weekly, so the week's cards land before a batch shoot |
 | every 30 min | Shared links only: the `/scout` paste box, the share-sheet Shortcut, Messages |
 
-`~/scout/install.sh` turns the schedule on. To check it's on, run
+`~/scout/install.sh` turns the schedule on. To run daily instead, delete the `Weekday` key in
+`~/scout/launchd/com.michaelconward.scout.plist` and run install.sh again. To check it's on, run
 `launchctl list | grep scout`. Logs are in `~/scout/logs/run-<date>.log`.
 
 To run it by hand from this folder:
@@ -76,6 +77,6 @@ comes back as `[NEEDS SOURCE]` and is listed under "Confirm first".
 Everything is in `scout/config.json`: lanes (accounts, hashtags, searches),
 thresholds and budget. Seed accounts that don't resolve are logged as issues on
 the page. `activeLanes` picks which lanes run (Henway and Mike since 2026-10-25; MyLÚA
-and Blabbing are parked, not deleted). With two lanes, a full run costs about $0.50 in Apify
+and Blabbing are parked, not deleted). With two lanes, a full run costs about $0.50 in Apify (about $2 a month weekly, inside the free $5)
 plus one Claude call per card. A 67s video measured 2026-10-25 used about 7K
 input and 4K output tokens. Each run's spend is on the `/scout` header.

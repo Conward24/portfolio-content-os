@@ -123,8 +123,8 @@
     "tiktokMinViews": 20000,
     "igDiscoveryMinLikes": 1500,
     "igDiscoveryMinPlays": 50000,
-    "maxCardsPerRun": 10,
-    "maxCardsPerLane": 5
+    "maxCardsPerRun": 12,
+    "maxCardsPerLane": 6
   },
   "budget": {
     "apifyMaxUsdPerActorRun": 0.5,
