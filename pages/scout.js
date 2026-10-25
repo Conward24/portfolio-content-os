@@ -1,12 +1,15 @@
 import { useState, useEffect, useMemo } from 'react';
 import Layout from '../components/Layout';
 import { BRANDS } from '../lib/constants';
+import scoutConfig from '../scout/config.json';
 
 // The Scout. Posts that beat their own account's usual on Instagram and
 // TikTok, found overnight by the worker on Michael's Mac
 // (scripts/scout/run.mjs), each broken down into a format we can borrow.
 
-const LANES = [['all', 'All'], ['mylua', 'MyLÚA'], ['henway', 'Henway'], ['mike', 'Mike'], ['blabbing', 'Blabbing']];
+// Parked lanes stay in scout/config.json but drop out of the page.
+const LANE_LABELS = { mylua: 'MyLÚA', henway: 'Henway', mike: 'Mike', blabbing: 'Blabbing' };
+const LANES = [['all', 'All'], ...scoutConfig.activeLanes.map(id => [id, LANE_LABELS[id]])];
 const STATUS_TABS = [['new', 'New'], ['saved', 'Saved'], ['made', 'Made'], ['passed', 'Passed']];
 const KINDS = [['all', 'All formats'], ['video', 'Video'], ['carousel', 'Carousel']];
 const FIT_FLOOR = 3;
@@ -143,7 +146,7 @@ function Card({ card, lane, onStatus, onCard }) {
   const [direction, setDirection] = useState('');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
-  const fits = Object.entries(a.fit || {}).filter(([, f]) => (f?.score || 0) >= FIT_FLOOR).sort((x, y) => y[1].score - x[1].score);
+  const fits = Object.entries(a.fit || {}).filter(([b]) => LANE_LABELS[b] && scoutConfig.activeLanes.includes(b)).filter(([, f]) => (f?.score || 0) >= FIT_FLOOR).sort((x, y) => y[1].score - x[1].score);
   const m = card.metrics || {};
   const stats = [m.views != null && `${n(m.views)} views`, m.likes != null && `${n(m.likes)} likes`, m.comments != null && `${n(m.comments)} comments`, m.shares && `${n(m.shares)} shares`, m.saves && `${n(m.saves)} saves`].filter(Boolean).join(' · ');
 
@@ -183,7 +186,7 @@ function Card({ card, lane, onStatus, onCard }) {
             {fits.length ? fits.map(([b, f]) => <BrandChip key={b} brand={b} score={f.score} />) : <Chip>Low fit for every lane</Chip>}
           </div>
 
-          {(a.ideas || []).slice(0, open ? 3 : 1).map((i, k) => (
+          {(a.ideas || []).filter(i => scoutConfig.activeLanes.includes(i.brand)).slice(0, open ? 3 : 1).map((i, k) => (
             <div key={k} style={{ fontSize: 13, lineHeight: 1.5, padding: '8px 10px', background: 'var(--bg2, #fafafa)', borderRadius: 8, marginBottom: 6 }}>
               <BrandChip brand={i.brand} score={a.fit?.[i.brand]?.score ?? '?'} /> <b>{i.title}</b>
               <div style={{ color: 'var(--text2)', marginTop: 3 }}>{i.hook} {open && <span style={{ color: 'var(--text3)' }}>{i.angle} Needs: {i.assets}. Effort: {i.effort}.</span>}</div>
@@ -284,7 +287,7 @@ export default function Scout() {
       xs = xs.filter(c => lowFit || (c.analysis?.fit?.[lane]?.score || 0) >= FIT_FLOOR);
       xs = [...xs].sort((a, b) => (b.shared ? 1 : 0) - (a.shared ? 1 : 0) || (b.analysis?.fit?.[lane]?.score || 0) - (a.analysis?.fit?.[lane]?.score || 0) || Date.parse(b.createdAt) - Date.parse(a.createdAt));
     } else if (!lowFit) {
-      xs = xs.filter(c => c.shared || (c.bestFit || 0) >= FIT_FLOOR);
+      xs = xs.filter(c => c.shared || scoutConfig.activeLanes.some(l => (c.analysis?.fit?.[l]?.score || 0) >= FIT_FLOOR));
     }
     return xs;
   }, [data, lane, status, kind, lowFit]);

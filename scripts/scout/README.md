@@ -75,6 +75,7 @@ comes back as `[NEEDS SOURCE]` and is listed under "Confirm first".
 
 Everything is in `scout/config.json`: lanes (accounts, hashtags, searches),
 thresholds and budget. Seed accounts that don't resolve are logged as issues on
-the page. With all four lanes on, a full run costs about $0.50 to $1.20 in Apify
+the page. `activeLanes` picks which lanes run (Henway and Mike since 2026-10-25; MyLÚA
+and Blabbing are parked, not deleted). With two lanes, a full run costs about $0.50 in Apify
 plus one Claude call per card. A 67s video measured 2026-10-25 used about 7K
 input and 4K output tokens. Each run's spend is on the `/scout` header.

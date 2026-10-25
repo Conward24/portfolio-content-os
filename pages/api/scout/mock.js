@@ -1,13 +1,14 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { redis } from '../../../lib/redis';
 import { SCOUT_CARDS } from '../../../lib/scout/keys.mjs';
-import { BRAND_RULES, SHORT_FORM_RULES } from '../../../lib/scout/rules.mjs';
+import { brandRules, SHORT_FORM_RULES } from '../../../lib/scout/rules.mjs';
 import { MICHAEL_VOICE } from '../../../lib/voice';
+import scoutConfig from '../../../scout/config.json';
 
 export const config = { maxDuration: 300 };
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-const LANES = ['mylua', 'henway', 'mike', 'blabbing'];
+const LANES = scoutConfig.activeLanes;
 
 function extractJson(text) {
   const fenced = /```(?:json)?\s*([\s\S]*?)```/i.exec(text);
@@ -59,7 +60,7 @@ export default async function handler(req, res) {
 
   const system = `You are Michael Conward's short-form editor. You turn a format that is working on ${card.platform} into a ready-to-shoot ${asCarousel ? 'carousel' : 'vertical video'} for one of his lanes.
 
-${BRAND_RULES}
+${brandRules(LANES)}
 
 ${SHORT_FORM_RULES}
 ${brand === 'mike' ? `\nHis personal voice, adapted from LinkedIn to short-form (keep the opener and reframe habits):\n${MICHAEL_VOICE.slice(0, 2500)}` : ''}

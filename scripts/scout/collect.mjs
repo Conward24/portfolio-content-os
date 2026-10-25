@@ -117,13 +117,14 @@ export async function collectWatched(config, autoWatch, budget, log) {
 
   // Discovery (hashtags, searches) is most of the spend, so it rotates: each
   // day covers `discoveryLanesPerDay` lanes. Watched accounts run every day.
-  const laneNames = Object.keys(config.lanes);
+  const laneNames = config.activeLanes;
   const perDay = Math.min(c.discoveryLanesPerDay || laneNames.length, laneNames.length);
   const day = Math.floor(Date.now() / 86400e3);
   const discoverToday = new Set(Array.from({ length: perDay }, (_, i) => laneNames[(day * perDay + i) % laneNames.length]));
   log.info(`discovery today: ${[...discoverToday].join(', ')}`);
 
-  for (const [lane, L] of Object.entries(config.lanes)) {
+  for (const lane of laneNames) {
+    const L = config.lanes[lane];
     const discover = discoverToday.has(lane);
     const auto = Object.entries(autoWatch).filter(([, v]) => v.lane === lane).map(([k]) => k.split(':'));
     const igAccounts = [...new Set([...(L.instagram?.accounts || []), ...auto.filter(([p]) => p === 'instagram').map(([, h]) => h)])];

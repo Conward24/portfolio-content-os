@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import { fmt } from './score.mjs';
-import { BRAND_RULES, SHORT_FORM_RULES } from '../../lib/scout/rules.mjs';
+import { brandRules, SHORT_FORM_RULES } from '../../lib/scout/rules.mjs';
 
 const MODEL = 'claude-opus-5-5';
 
@@ -32,7 +32,7 @@ function describe(p, why, media) {
   return m.filter(Boolean).join('\n');
 }
 
-const SHAPE = `{
+const shape = lanes => `{
   "formatName": "3-6 word name for the FORMAT, e.g. 'POV text over B-roll', 'Myth vs fact carousel'",
   "hook": { "visual": "what is on screen in the first 2s / slide 1", "text": "on-screen text, verbatim", "spoken": "first spoken line, verbatim, or null", "whyItStops": "one sentence" },
   "structure": [ { "at": "0-2s or 'slide 1'", "beat": "what happens" } ],
@@ -42,13 +42,13 @@ const SHAPE = `{
   "cta": "how it asks for the follow/save/comment, or null",
   "whyItWorked": ["2-4 specific reasons tied to what you SEE in this post, not generic advice"],
   "recipe": "the reusable template with the creator's content removed, 2-3 sentences, written so an editor could shoot it",
-  "fit": { "mylua": {"score": 0, "why": ""}, "henway": {"score": 0, "why": ""}, "mike": {"score": 0, "why": ""}, "blabbing": {"score": 0, "why": ""} },
-  "ideas": [ { "brand": "mylua|henway|mike|blabbing", "title": "", "hook": "the first line/frame of OUR version", "angle": "2 sentences", "assets": "what Michael would need: app screen recording, him on camera, Tiffany voiceover, slides only...", "effort": "low|medium|high" } ],
+  "fit": { ${lanes.map(l => `"${l}": {"score": 0, "why": ""}`).join(', ')} },
+  "ideas": [ { "brand": "${lanes.join('|')}", "title": "", "hook": "the first line/frame of OUR version", "angle": "2 sentences", "assets": "what Michael would need: app screen recording, him on camera, Tiffany voiceover, slides only...", "effort": "low|medium|high" } ],
   "cautions": ["anything risky: licensed trend audio, claims we can't back, a format that would read as copying this creator"],
   "watchCreator": true
 }`;
 
-export async function analyzePost(p, why, media, taste) {
+export async function analyzePost(p, why, media, taste, lanes) {
   const content = [];
   for (const f of media.frames) content.push(img(f.file));
   for (const s of media.slides) content.push(img(s));
@@ -59,12 +59,12 @@ Break this post down for Michael's editor. What made it travel, and how would ea
 Fit scores: 0 = no use, 3 = usable with a clear angle, 5 = shoot this week. Be strict: most posts are a 2 for most lanes. Give 1-3 ideas, only for lanes scoring 3+, and make them concrete to that lane (a real product moment, a real audience), never generic.
 ${taste ? `\nMichael's recent taste (learn from it, don't mention it):\n${taste}\n` : ''}
 Reply with JSON only, this shape:
-${SHAPE}` });
+${shape(lanes)}` });
 
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: { 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-    body: JSON.stringify({ model: MODEL, max_tokens: 8000, system: `You are a short-form video and carousel editor who studies what travels on Instagram and TikTok and adapts formats for a founder's brands.\n\n${BRAND_RULES}\n\n${SHORT_FORM_RULES}`, messages: [{ role: 'user', content }] }),
+    body: JSON.stringify({ model: MODEL, max_tokens: 8000, system: `You are a short-form video and carousel editor who studies what travels on Instagram and TikTok and adapts formats for a founder's brands.\n\n${brandRules(lanes)}\n\n${SHORT_FORM_RULES}`, messages: [{ role: 'user', content }] }),
   });
   if (!res.ok) throw new Error(`claude ${res.status}: ${(await res.text()).slice(0, 200)}`);
   const data = await res.json();

@@ -126,7 +126,7 @@ async function main() {
     try {
       const media = await readMedia(p, dir);
       if (!media.frames.length && !media.slides.length && !media.cover) throw new Error(`no media readable (${media.notes.join('; ')})`);
-      const { analysis, usage } = await analyzePost(p, s, media, taste);
+      const { analysis, usage } = await analyzePost(p, s, media, taste, config.activeLanes);
       claudeIn += usage?.input_tokens || 0; claudeOut += usage?.output_tokens || 0;
 
       const slug = p.id.replace(/[^a-z0-9]/gi, '-');
@@ -136,7 +136,7 @@ async function main() {
       const slides = [];
       for (const [i, f] of media.slides.entries()) slides.push(await upload(f, `${slug}/s-${i + 1}.jpg`));
 
-      const fits = Object.values(analysis.fit || {}).map(f => Number(f?.score) || 0);
+      const fits = config.activeLanes.map(l => Number(analysis.fit?.[l]?.score) || 0);
       const card = {
         id: p.id, platform: p.platform, url: p.url, handle: p.handle, followers: p.followers, kind: p.kind,
         caption: (p.caption || '').slice(0, 1200), postedAt: p.postedAt,

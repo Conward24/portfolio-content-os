@@ -1,5 +1,9 @@
 {
-  "_readme": "The Scout's watch config. Lanes are brands (keys match lib/constants.js BRANDS). Accounts are seeds: handles that fail to resolve show as issues on /scout, and the worker adds creators whose posts score high on fit (see scout:watch:auto in Redis). Hashtags and searches are the discovery net. Budgets cap Apify spend per run.",
+  "_readme": "The Scout's watch config. Lanes are brands (keys match lib/constants.js BRANDS). Accounts are seeds: handles that fail to resolve show as issues on /scout, and the worker adds creators whose posts score high on fit (see scout:watch:auto in Redis). Hashtags and searches are the discovery net. Budgets cap Apify spend per run. Only lanes in activeLanes are collected, scored for fit and shown on /scout; the others stay here, parked, so turning one back on is a one-word edit.",
+  "activeLanes": [
+    "henway",
+    "mike"
+  ],
   "lanes": {
     "mylua": {
       "about": "Maternal health, doulas, postpartum, Black maternal health, women's health tech, care coordination. Audience: doula agencies, health plan and care teams, moms-adjacent healthcare pros.",
@@ -120,7 +124,7 @@
     "igDiscoveryMinLikes": 1500,
     "igDiscoveryMinPlays": 50000,
     "maxCardsPerRun": 10,
-    "maxCardsPerLane": 4
+    "maxCardsPerLane": 5
   },
   "budget": {
     "apifyMaxUsdPerActorRun": 0.5,
