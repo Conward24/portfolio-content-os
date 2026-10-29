@@ -8,7 +8,7 @@ const FILE = path.join(DATA, 'history.json');
 
 export function loadHistory() {
   try { return JSON.parse(fs.readFileSync(FILE, 'utf8')); }
-  catch { return { posts: {}, analyzed: {}, messagesRowid: 0 }; }
+  catch { return { posts: {}, analyzed: {} }; }
 }
 export function saveHistory(h) {
   // Drop posts older than 120 days so the file stays small.

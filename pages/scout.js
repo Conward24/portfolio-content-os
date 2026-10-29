@@ -241,7 +241,6 @@ function Health({ meta, count }) {
   const notes = [];
   if (hours > 36) notes.push({ bad: true, t: `Last run ${ago(meta.at)}. The Mac may have been off; it catches up when it wakes.` });
   if (meta.sources && !meta.sources.apify) notes.push({ t: 'Instagram is off until the Apify key is in ~/scout/.env (TikTok runs on the free path, which is patchy).' });
-  if (meta.sources?.messages === 'needs Full Disk Access') notes.push({ t: 'Links texted to you are not being read yet: give node Full Disk Access (see the Scout README).' });
   return (
     <div style={{ fontSize: 12.5, color: 'var(--text3)', lineHeight: 1.6 }}>
       Last run {ago(meta.at)} · {meta.made} new card{meta.made === 1 ? '' : 's'} · {count} in the feed{meta.apifyUsd ? ` · scraping $${meta.apifyUsd.toFixed(2)}` : ''}{meta.errors?.length ? ` · ${meta.errors.length} issue${meta.errors.length === 1 ? '' : 's'}` : ''}
@@ -277,7 +276,7 @@ export default function Scout() {
     setLinkMsg('');
     const r = await fetch('/api/scout/inbox', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: link, source: 'paste box' }) });
     const d = await r.json();
-    if (d.error) setLinkMsg(d.error); else { setLink(''); setLinkMsg('Queued. It shows up here after the next inbox check (every 30 minutes while the Mac is awake).'); }
+    if (d.error) setLinkMsg(d.error); else { setLink(''); setLinkMsg('Queued. It shows up here within about 5 minutes while the Mac is awake.'); }
   }
 
   const cards = useMemo(() => {
