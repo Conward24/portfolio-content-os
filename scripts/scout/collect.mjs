@@ -173,7 +173,7 @@ export async function collectWatched(config, autoWatch, budget, log) {
   return posts.filter(p => p.handle && p.id);
 }
 
-// Links people sent: the app's paste box / share-sheet inbox, plus Messages.
+// Links people sent: the app's paste box / share-sheet inbox.
 export async function resolveShared(links, budget, log) {
   const out = [];
   const ig = [], ttApify = [];
@@ -213,39 +213,6 @@ export async function resolveShared(links, budget, log) {
     } catch (e) { log.error(`shared tiktok: ${e.message}`); }
   }
   return { posts: out, retry: [] };
-}
-
-// iMessage: any Instagram or TikTok post link in a text since the last run.
-// Needs Full Disk Access for the process launchd runs (node). Only the link
-// and the date are kept; never the message text or who sent it.
-export async function messagesLinks(state, log) {
-  const db = path.join(HOME, 'Library/Messages/chat.db');
-  const since = state.messagesRowid || 0;
-  // First run: only look back 14 days, not the whole history. Message.date is
-  // nanoseconds since 2001-01-01.
-  const cutoffApple = since === 0 ? Math.floor((Date.now() / 1000 - 978307200 - 14 * 86400) * 1e9) : 0;
-  const sql = `select ROWID as id, is_from_me as me, date, text, hex(attributedBody) as body from message
-    where ROWID > ${Number(since)} and date > ${cutoffApple} order by ROWID asc limit 20000;`;
-  let rows;
-  try {
-    const { stdout } = await run('/usr/bin/sqlite3', ['-readonly', '-json', db, sql], { maxBuffer: 256 * 1024 * 1024 });
-    rows = stdout.trim() ? JSON.parse(stdout) : [];
-  } catch (e) {
-    if (/authorization denied|unable to open/.test(String(e.stderr || e.message))) return { links: [], blocked: true };
-    log.error(`messages: ${String(e.message).slice(0, 160)}`);
-    return { links: [], blocked: false };
-  }
-  const maxId = rows.reduce((m, r) => Math.max(m, r.id), since);
-  const links = [];
-  for (const r of rows) {
-    const text = r.text || Buffer.from(r.body || '', 'hex').toString('latin1');
-    for (const m of text.matchAll(/https?:\/\/(?:www\.|m\.|vm\.|vt\.)?(?:instagram\.com|tiktok\.com)\/[^\s"'<>\x00-\x1f]+/g)) {
-      const url = m[0].replace(/[).,;\]]+$/, '');
-      if (parsePostUrl(url)) links.push({ url, source: r.me ? 'you sent this in Messages' : 'sent to you in Messages', at: new Date((r.date / 1e9 + 978307200) * 1000).toISOString() });
-    }
-  }
-  state.messagesRowid = maxId;
-  return { links, blocked: false };
 }
 
 export function tmpClean(dir) {

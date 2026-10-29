@@ -23,7 +23,7 @@ const req = createRequire(path.join(SCOUT_HOME, 'package.json'));
 const load = name => import(pathToFileURL(req.resolve(name, { paths: [SCOUT_HOME, process.cwd()] })).href);
 const { Redis } = await load('@upstash/redis');
 const { put } = await load('@vercel/blob');
-const { collectWatched, resolveShared, messagesLinks, tmpClean } = await import('./collect.mjs');
+const { collectWatched, resolveShared, tmpClean } = await import('./collect.mjs');
 const { loadHistory, saveHistory, recordPosts, scorePost, pick } = await import('./score.mjs');
 const { readMedia } = await import('./media.mjs');
 const { analyzePost } = await import('./analyze.mjs');
@@ -74,14 +74,13 @@ async function main() {
   const startedAt = new Date().toISOString();
   const history = (globalThis.__scoutHistory = loadHistory());
   const budget = { spent: 0, max: config.budget.apifyMaxUsdPerDay, perRun: config.budget.apifyMaxUsdPerActorRun };
-  const sources = { apify: apifyReady(), messages: 'unknown' };
+  const sources = { apify: apifyReady() };
 
-  // 1. Shared links: the inbox list plus anything texted to him.
+  // 1. Shared links: what he pasted into /scout or sent from the share sheet.
+  // Nothing else is read: Michael ruled out reading his Messages (2026-10-29).
   const inbox = DRY ? [] : ((await redis.lrange(K.SCOUT_INBOX, 0, -1)) || []).map(x => (typeof x === 'string' ? JSON.parse(x) : x));
   if (!DRY && inbox.length) await redis.del(K.SCOUT_INBOX);
-  const msgs = await messagesLinks(history, log);
-  sources.messages = msgs.blocked ? 'needs Full Disk Access' : 'on';
-  const sharedLinks = [...inbox, ...msgs.links];
+  const sharedLinks = inbox;
   const shared = await resolveShared(sharedLinks, budget, log);
   if (!DRY) for (const r of shared.retry) await redis.rpush(K.SCOUT_INBOX, JSON.stringify(r));
   if (sharedLinks.length) log.info(`shared links: ${sharedLinks.length} in, ${shared.posts.length} resolved`);

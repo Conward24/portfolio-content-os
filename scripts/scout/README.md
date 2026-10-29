@@ -12,7 +12,7 @@ yt-dlp, and those don't run in a serverless function.
 | When | What |
 |---|---|
 | Sundays 6:30am (or on wake) | Full run: watched accounts, hashtags, searches, shared links. Weekly, so the week's cards land before a batch shoot |
-| every 30 min | Shared links only: the `/scout` paste box, the share-sheet Shortcut, Messages |
+| every 5 min | Shared links only: the `/scout` paste box and the share-sheet Shortcut. Scout never reads Messages (Michael, 2026-10-29) |
 
 `~/scout/install.sh` turns the schedule on. To run daily instead, delete the `Weekday` key in
 `~/scout/launchd/com.michaelconward.scout.plist` and run install.sh again. To check it's on, run
@@ -62,10 +62,6 @@ comes back as `[NEEDS SOURCE]` and is listed under "Confirm first".
   never committed.
 - **`~/scout/.venv`**: yt-dlp plus curl_cffi, installed with
   `python3 -m venv ~/scout/.venv && ~/scout/.venv/bin/pip install yt-dlp "curl_cffi>=0.10,<0.14"`.
-- **Messages**: reading links texted to you needs Full Disk Access. Go to System
-  Settings → Privacy & Security → Full Disk Access, then add `/usr/local/bin/node`
-  and `/bin/zsh`. The worker keeps only the link and the date, never the message
-  or who sent it.
 - **Share sheet** (iPhone): in Shortcuts, make a new shortcut. Turn on "Show in Share
   Sheet" and set it to accept URLs and text. Add a "Get Contents of URL" action
   pointed at
