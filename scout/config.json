@@ -1,0 +1,133 @@
+{
+  "_readme": "The Scout's watch config. Lanes are brands (keys match lib/constants.js BRANDS). Accounts are seeds: handles that fail to resolve show as issues on /scout, and the worker adds creators whose posts score high on fit (see scout:watch:auto in Redis). Hashtags and searches are the discovery net. Budgets cap Apify spend per run. Only lanes in activeLanes are collected, scored for fit and shown on /scout; the others stay here, parked, so turning one back on is a one-word edit.",
+  "activeLanes": [
+    "henway",
+    "mike"
+  ],
+  "lanes": {
+    "mylua": {
+      "about": "Maternal health, doulas, postpartum, Black maternal health, women's health tech, care coordination. Audience: doula agencies, health plan and care teams, moms-adjacent healthcare pros.",
+      "instagram": {
+        "accounts": [],
+        "hashtags": [
+          "doula",
+          "maternalhealth",
+          "blackmaternalhealth",
+          "postpartum",
+          "healthtech"
+        ]
+      },
+      "tiktok": {
+        "accounts": [
+          "thebirthdoula",
+          "serenitylifedoula",
+          "adopeblackdoula",
+          "thepeoplesmidwife",
+          "doctorwalesmd"
+        ],
+        "hashtags": [
+          "doulatok",
+          "maternalhealth",
+          "postpartum"
+        ],
+        "searches": [
+          "doula business tips",
+          "healthcare startup founder"
+        ]
+      }
+    },
+    "henway": {
+      "about": "Building apps with AI without coding, AI tools for creators, coaches and small businesses, solopreneur systems. Audience: entrepreneurs, creators, fitness coaches, travel planners, healthcare pros with a side business.",
+      "instagram": {
+        "accounts": [],
+        "hashtags": [
+          "aitools",
+          "nocode",
+          "buildinpublic",
+          "solopreneur"
+        ]
+      },
+      "tiktok": {
+        "accounts": [
+          "aiadvantage",
+          "rowancheung"
+        ],
+        "hashtags": [
+          "aitools",
+          "vibecoding",
+          "nocode"
+        ],
+        "searches": [
+          "I built an app with AI",
+          "AI tool for small business"
+        ]
+      }
+    },
+    "mike": {
+      "about": "Michael's personal account: founder/CEO life, Black founders, building in public, travel, fitness and lifestyle as a founder, PhD engineer turned founder.",
+      "instagram": {
+        "accounts": [],
+        "hashtags": [
+          "founderlife",
+          "blackfounders",
+          "ceolife"
+        ]
+      },
+      "tiktok": {
+        "accounts": [
+          "garyvee"
+        ],
+        "hashtags": [
+          "founderlife",
+          "blackfounder"
+        ],
+        "searches": [
+          "day in the life startup founder"
+        ]
+      }
+    },
+    "blabbing": {
+      "about": "Market intelligence, sentiment, PR and comms, knowing your market first. Audience: PR/comms leads, CRE, financial services, university leaders.",
+      "instagram": {
+        "accounts": [],
+        "hashtags": [
+          "marketresearch",
+          "prtips"
+        ]
+      },
+      "tiktok": {
+        "accounts": [],
+        "hashtags": [
+          "prtips"
+        ],
+        "searches": [
+          "market research tips"
+        ]
+      }
+    }
+  },
+  "collect": {
+    "accountPostsPerRun": 8,
+    "accountWindowDays": 10,
+    "hashtagPostsPerRun": 8,
+    "searchPostsPerRun": 8,
+    "maxAutoAccountsPerPlatform": 40,
+    "discoveryLanesPerDay": 2
+  },
+  "score": {
+    "maxPostAgeDays": 21,
+    "maxDiscoveryAgeDays": 60,
+    "minAccountHistory": 5,
+    "accountOutlierMin": 3,
+    "tiktokReachMin": 2,
+    "tiktokMinViews": 20000,
+    "igDiscoveryMinLikes": 1500,
+    "igDiscoveryMinPlays": 50000,
+    "maxCardsPerRun": 12,
+    "maxCardsPerLane": 6
+  },
+  "budget": {
+    "apifyMaxUsdPerActorRun": 0.5,
+    "apifyMaxUsdPerDay": 1.2
+  }
+}
