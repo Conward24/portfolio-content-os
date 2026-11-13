@@ -9,7 +9,7 @@ export const SCOUT_HOME = process.env.SCOUT_HOME || path.join(HOME, 'scout');
 export const TMP = path.join(SCOUT_HOME, 'tmp');
 export const DATA = path.join(SCOUT_HOME, 'data');
 export const YTDLP = path.join(SCOUT_HOME, '.venv/bin/yt-dlp');
-export const WHISPER_MODEL = path.join(HOME, '.cache/whisper/ggml-base.en.bin');
+export const WHISPER_MODEL = path.join(HOME, '.cache/whisper/ggml-small.en.bin'); // base invents words; small only
 
 export function loadEnv() {
   const file = path.join(SCOUT_HOME, '.env');

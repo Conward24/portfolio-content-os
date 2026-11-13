@@ -21,24 +21,24 @@ async function shrink(src, dst, width) {
   return dst;
 }
 
-async function probeDuration(file) {
+export async function probeDuration(file) {
   const { stderr } = await run('ffmpeg', ['-hide_banner', '-i', file], { timeout: 30000 }).catch(e => e);
   const m = /Duration: (\d+):(\d+):([\d.]+)/.exec(stderr || '');
   return m ? (+m[1]) * 3600 + (+m[2]) * 60 + parseFloat(m[3]) : null;
 }
 
 // Hard cuts per second, from ffmpeg's scene score. A rough pacing number.
-async function cutCount(file) {
+export async function cutCount(file) {
   const { stderr } = await run('ffmpeg', ['-hide_banner', '-i', file, '-vf', "scale=160:-2,select='gt(scene,0.32)',showinfo", '-an', '-f', 'null', '-'], { timeout: 180000, maxBuffer: 32 * 1024 * 1024 }).catch(e => e);
   return ((stderr || '').match(/pts_time:/g) || []).length;
 }
 
-async function frameAt(file, t, out) {
-  await run('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-ss', String(t), '-i', file, '-frames:v', '1', '-vf', 'scale=480:-2', '-q:v', '5', '-y', out], { timeout: 30000 });
+export async function frameAt(file, t, out) {
+  await run('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-ss', String(t), '-i', file, '-frames:v', '1', '-vf', 'scale=640:-2', '-q:v', '4', '-y', out], { timeout: 30000 });
   return fs.existsSync(out) ? out : null;
 }
 
-async function transcribe(file, dir) {
+export async function transcribe(file, dir) {
   if (!fs.existsSync(WHISPER_MODEL)) return null;
   const wav = path.join(dir, 'a.wav');
   await run('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-i', file, '-ar', '16000', '-ac', '1', '-y', wav], { timeout: 120000 });
@@ -55,7 +55,7 @@ async function transcribe(file, dir) {
 }
 
 // → { frames: [{t, file}], slides: [file], transcript, duration, cuts, cover }
-export async function readMedia(post, dir) {
+export async function readMedia(post, dir, { keepVideo = false, skipTranscript = false } = {}) {
   fs.mkdirSync(dir, { recursive: true });
   const out = { frames: [], slides: [], transcript: null, duration: post.durationSec, cuts: null, cover: null, notes: [] };
 
@@ -86,15 +86,16 @@ export async function readMedia(post, dir) {
 
   out.duration = (await probeDuration(video)) || out.duration;
   const d = out.duration || 15;
-  // Dense at the start (the hook decides the scroll), then spread out.
-  const times = [0.1, 1, 2, 3.5, d * 0.3, d * 0.5, d * 0.7, Math.max(d - 1, 0.2)].filter((t, i, a) => t < d && a.indexOf(t) === i);
+  // Dense at the start (the hook decides the scroll), then spread out. 640 wide so
+  // caption fonts, colors and positions can be read off the frames.
+  const times = [0.1, 0.6, 1.2, 2, 3, 4.5, d * 0.25, d * 0.4, d * 0.55, d * 0.7, d * 0.85, Math.max(d - 1, 0.2)].sort((a, b) => a - b).filter((t, i, a) => t < d && a.indexOf(t) === i);
   for (const [i, t] of times.entries()) {
     try { const f = await frameAt(video, t.toFixed(2), path.join(dir, `f${i}.jpg`)); if (f) out.frames.push({ t: +t.toFixed(1), file: f }); }
     catch (e) { out.notes.push(`frame ${t}: ${e.message}`); }
   }
   if (!out.cover && out.frames[0]) out.cover = out.frames[0].file;
   try { out.cuts = await cutCount(video); } catch {}
-  try { out.transcript = await transcribe(video, dir); } catch (e) { out.notes.push(`transcript: ${String(e.message).slice(0, 120)}`); }
-  fs.rmSync(video, { force: true });
+  if (!skipTranscript) try { out.transcript = await transcribe(video, dir); } catch (e) { out.notes.push(`transcript: ${String(e.message).slice(0, 120)}`); }
+  if (keepVideo) out.video = video; else fs.rmSync(video, { force: true });
   return out;
 }
