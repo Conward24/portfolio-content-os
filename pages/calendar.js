@@ -269,6 +269,10 @@ export default function Calendar() {
               <DetailBlock label="First comment" text={selected.firstComment}
                 onCopy={() => copyField('firstComment', selected.firstComment)} copied={copied === 'firstComment'} />
             )}
+            {selected.personalComment && (
+              <DetailBlock label="Your comment (@conward2)" text={selected.personalComment}
+                onCopy={() => copyField('personalComment', selected.personalComment)} copied={copied === 'personalComment'} />
+            )}
             {selected.notes && <DetailBlock label="Notes" text={selected.notes} />}
             {Array.isArray(selected.assets) && selected.assets.length > 0 && (
               <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 10 }}>
