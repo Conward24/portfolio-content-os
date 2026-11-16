@@ -405,23 +405,28 @@ export default function Today() {
                             {p.copy}
                           </div>
                         )}
-                        {p.firstComment && (
-                          <div style={{ marginTop: 10 }}>
+                        {[
+                          ['firstComment', p.channelLabel === 'COMPANY'
+                            ? 'YOUR COMMENT, FROM YOUR PERSONAL PROFILE, WITHIN THE HOUR'
+                            : p.channelLabel === 'INSTAGRAM' ? 'PIN THIS, FROM @henwayai' : 'FIRST COMMENT'],
+                          ['personalComment', 'YOUR COMMENT, FROM @conward2, WITHIN 15 MINUTES'],
+                        ].filter(([f]) => p[f]).map(([f, label]) => (
+                          <div key={f} style={{ marginTop: 10 }}>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 }}>
-                              <span style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.09em', color: 'var(--text3)' }}>{p.channelLabel === 'COMPANY' ? 'YOUR COMMENT, FROM YOUR PERSONAL PROFILE, WITHIN THE HOUR' : 'FIRST COMMENT'}</span>
+                              <span style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.09em', color: 'var(--text3)' }}>{label}</span>
                               <button
                                 className="btn"
-                                onClick={() => copy(p.firstComment, `${p.id}:firstComment`)}
+                                onClick={() => copy(p[f], `${p.id}:${f}`)}
                                 style={{ padding: '6px 12px', fontSize: 12, fontWeight: 600 }}
                               >
-                                {copied === `${p.id}:firstComment` ? 'Copied ✓' : 'Copy'}
+                                {copied === `${p.id}:${f}` ? 'Copied ✓' : 'Copy'}
                               </button>
                             </div>
                             <div style={{ fontSize: 13.5, lineHeight: 1.6, whiteSpace: 'pre-line', background: 'var(--bg2)', borderRadius: 8, padding: '10px 13px' }}>
-                              {p.firstComment}
+                              {p[f]}
                             </div>
                           </div>
-                        )}
+                        ))}
                         {p.notes && (
                           <div style={{ marginTop: 10, fontSize: 12.5, lineHeight: 1.55, color: 'var(--text2)', whiteSpace: 'pre-line' }}>
                             <span style={{ fontWeight: 700, color: 'var(--text3)', letterSpacing: '.06em', fontSize: 10.5 }}>NOTES · </span>
